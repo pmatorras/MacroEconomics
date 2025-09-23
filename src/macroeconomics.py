@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import argparse
 
 # File paths
-GDP_FILE_PATH = "Data/gdp.csv"
-INFLATION_FILE_PATH = "Data/API_FP.CPI.TOTL.ZG_DS2_en_csv_v2_59.csv"
-FIGURE_FOLDER = "Figures/"
+GDP_FILE_PATH = "../Data/gdp.csv"
+INFLATION_FILE_PATH = "../Data/API_FP.CPI.TOTL.ZG_DS2_en_csv_v2_59.csv"
+FIGURE_FOLDER = "../Figures/"
 
 def check_valid_countries(df, country_codes):
     """Exit if any country code not in dataset."""

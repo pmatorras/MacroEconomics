@@ -1,14 +1,15 @@
-import requests, os
+import os
+import requests
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
 
-FOLDER_NAME=r"../Data/"
+FOLDER_NAME = r"../Data/"
 os.makedirs(FOLDER_NAME, exist_ok=True)
+
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
 
 def latest_weo_release_tag(today=None):
-    # Full WEO releases are April and October (Updates in Jan/Jul are partial)
     if today is None:
         today = datetime.now()
     y, m = today.year, today.month
@@ -41,8 +42,8 @@ def chunked(iterable, n):
 
 def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=50, timeout=60):
     """
-    Fetch indicator timeseries for many countries by chunking the country list
-    to avoid 400 errors due to URL length or validation issues.
+    Fetch indicator timeseries for many countries by chunking the country list.
+    Returns a tidy DataFrame with columns: country, indicator, year, value.
     """
     all_rows = []
     years_q = ""
@@ -51,55 +52,112 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
             years_q = "?periods=" + ",".join(str(y) for y in years)
         else:
             years_q = "?periods=" + str(years)
+
     for batch in chunked(country_ids, chunk_size):
-        # Join countries; quote not strictly necessary for alnum/underscore, but safe
         countries_seg = ",".join(batch)
         path = f"timeseries/{quote(indicator_id)}/{countries_seg}{years_q}"
         try:
             js = dm_get_json(path, timeout=timeout)
         except requests.HTTPError as e:
-            # Skip failing batch but continue others; log minimal context
             print(f"Batch failed ({len(batch)} IDs): {e}")
-            continue
-        data = js.get("data") or js.get("values", {}).get(indicator_id)  # API sometimes exposes 'data' vs 'values'
+            continue  # skip this batch, try next
+
+        # Prefer values[indicator_id] when present; fall back to js['data'] only if it matches shape.
+        values = js.get("values", {})
+        data = values.get(indicator_id)
+
+        # If 'values' does not carry this indicator, try 'data' only if it looks like country->year dicts.
+        if data is None:
+            data = js.get("data")
+            # Validate shape conservatively: expect dict of countries mapping to dict of year->value
+            if not isinstance(data, dict) or not data:
+                continue
+            # Peek one item to check inner mapping looks like years
+            sample_series = next(iter(data.values()))
+            if not isinstance(sample_series, dict) or not sample_series:
+                continue
+            # Check keys look like years (numeric strings)
+            sample_key = next(iter(sample_series.keys()))
+            if not (isinstance(sample_key, str) and (sample_key.isdigit() or sample_key.replace("-", "").isdigit())):
+                continue
+
         if not data:
             continue
-        # 'data' usually maps country-> {year: value}
+
+        # Flatten
+        allowed = set(batch)
         for ctry, series in data.items():
+            if ctry not in allowed:
+                continue
+            if not isinstance(series, dict):
+                continue
             for year, val in series.items():
-                all_rows.append({"country": ctry, "indicator": indicator_id, "year": int(year), "value": val})
+                try:
+                    yint = int(year)
+                except Exception:
+                    continue
+                all_rows.append({
+                    "country": ctry,
+                    "indicator": indicator_id,
+                    "year": yint,
+                    "value": val
+                })
+
     return pd.DataFrame(all_rows)
 
 def main():
     release_tag = latest_weo_release_tag()
+
     # Metadata
     countries = get_countries_df()
     indicators = get_indicators_df()
+
     countries.to_csv(FOLDER_NAME+f"imf_weo_countries_{release_tag}.csv", index=False)
     indicators.to_csv(FOLDER_NAME+f"imf_weo_indicators_{release_tag}.csv", index=False)
 
-    # Choose indicators (customize as needed)
-    #chosen = ["NGDP_RPCH", "NGDPD"]  # real GDP growth, nominal GDP, inflation eop, debt%GDP
-    chosen = ["LP", "GDP", "PPPPC", "NGDPDPC","PCPIEPCH", "LUR","d"]
-    # Validate country IDs: use all IDs returned by API; optionally filter aggregates if desired
-    all_ids = countries["id"].dropna().astype(str).tolist()
+    # Choose indicators (remove stray/invalid IDs)
+    chosen_indicators = ["LP", "NGDPD", "PPPPC", "NGDPDPC", "PCPIEPCH", "LUR"]
 
-    # Year window: last 15 years + next 5 (adjust as needed)
-    y =  datetime.now().year
-    years = list(range(y - 15, y + 6))
+    # Validate indicators against metadata to avoid alias/fallback duplicates
+    valid_set = set(indicators["id"].astype(str))
+    chosen_indicators = [i for i in chosen_indicators if i in valid_set]
+    if not chosen_indicators:
+        print("No valid indicators selected; exiting.")
+        return
+
+    # Build EU members list from metadata names
+    countries_iso3 = ["AUT","BEL","BGR","HRV","CYP","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN",
+           "IRL","ITA","LVA","LTU","LUX","MLT","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE", "USA", "PHL", "CHN", "KOR", "CHE", "CHL", "JPN", "IND", "THA", "UZB", "VNM",  "RUS", "UKR"]
+    selected_countries = countries.loc[countries["id"].isin(countries_iso3), "id"].astype(str).tolist()
+
+    # Years: last 15 + next 5 (WEO projections)
+    y = datetime.now().year
+    years = list(range(1991, y + 6))
 
     frames = []
-    for ind in chosen:
+    for ind in chosen_indicators:
         print("processing:", ind)
-        df = fetch_timeseries_chunked(ind, all_ids, years=years, chunk_size=40)
+        df = fetch_timeseries_chunked(ind, selected_countries, years=years, chunk_size=40)
+        if df is None or df.empty:
+            print(f"Empty for {ind}, skipped")
+            continue
+        # Ensure correct indicator label
+        if "indicator" not in df.columns:
+            df = df.assign(indicator=ind)
+        else:
+            # Force to expected value in case upstream mislabeled
+            df["indicator"] = ind
         frames.append(df)
+
+    # Concatenate and write once
     if frames:
         out = pd.concat(frames, ignore_index=True)
-        out.sort_values(["indicator", "country", "year"], inplace=True)
+        out.drop_duplicates(subset=["indicator","country","year"], inplace=True)
+        out.sort_values(["indicator","country","year"], inplace=True)
         out.to_csv(FOLDER_NAME+f"imf_weo_timeseries_{release_tag}.csv", index=False)
-        print(f"Saved" +FOLDER_NAME+f"imf_weo_timeseries_{release_tag}.csv with {len(out):,} rows")
+        print(f"Saved {len(out):,} rows ...")
     else:
-        print("No data retrieved; check indicators/countries/year ranges.")
+        print("No data retrieved! check indicators/countries/year ranges.")
 
 if __name__ == "__main__":
     main()
