@@ -80,8 +80,8 @@ def main():
     print(indicators, countries)
     exit()
     # Choose indicators (customize as needed)
-    chosen = ["NGDP_RPCH", "NGDPD"]  # real GDP growth, nominal GDP, inflation eop, debt%GDP
-
+    #chosen = ["NGDP_RPCH", "NGDPD"]  # real GDP growth, nominal GDP, inflation eop, debt%GDP
+    chosen = ["LP", "GDP", "PPPPC", "NGDPDPC","PCPIEPCH", "LUR","d"]
     # Validate country IDs: use all IDs returned by API; optionally filter aggregates if desired
     all_ids = countries["id"].dropna().astype(str).tolist()
 
