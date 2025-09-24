@@ -3,9 +3,8 @@ import requests
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
-
-FOLDER_NAME = r"../Data/"
-os.makedirs(FOLDER_NAME, exist_ok=True)
+import common
+os.makedirs(common.DATA_FOLDER, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
 
@@ -106,29 +105,26 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
     return pd.DataFrame(all_rows)
 
 def main():
+
     release_tag = latest_weo_release_tag()
 
     # Metadata
     countries = get_countries_df()
     indicators = get_indicators_df()
 
-    countries.to_csv(FOLDER_NAME+f"imf_weo_countries_{release_tag}.csv", index=False)
-    indicators.to_csv(FOLDER_NAME+f"imf_weo_indicators_{release_tag}.csv", index=False)
+    countries.to_csv(common.DATA_FOLDER/f"imf_weo_countries_{release_tag}.csv", index=False)
+    indicators.to_csv(common.DATA_FOLDER/f"imf_weo_indicators_{release_tag}.csv", index=False)
 
     # Choose indicators (remove stray/invalid IDs)
-    chosen_indicators = ["LP", "NGDPD", "PPPPC", "NGDPDPC", "PCPIEPCH", "LUR"]
 
     # Validate indicators against metadata to avoid alias/fallback duplicates
     valid_set = set(indicators["id"].astype(str))
-    chosen_indicators = [i for i in chosen_indicators if i in valid_set]
+    chosen_indicators = ["NGDPD"]#[i for i in common.chosen_indicators if i in valid_set]
     if not chosen_indicators:
         print("No valid indicators selected; exiting.")
         return
 
-    # Build EU members list from metadata names
-    countries_iso3 = ["AUT","BEL","BGR","HRV","CYP","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN",
-           "IRL","ITA","LVA","LTU","LUX","MLT","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE", "USA", "PHL", "CHN", "KOR", "CHE", "CHL", "JPN", "IND", "THA", "UZB", "VNM",  "RUS", "UKR"]
-    selected_countries = countries.loc[countries["id"].isin(countries_iso3), "id"].astype(str).tolist()
+    selected_countries = countries.loc[countries["id"].isin(common.countries_iso3), "id"].astype(str).tolist()
 
     # Years: last 15 + next 5 (WEO projections)
     y = datetime.now().year
@@ -154,7 +150,7 @@ def main():
         out = pd.concat(frames, ignore_index=True)
         out.drop_duplicates(subset=["indicator","country","year"], inplace=True)
         out.sort_values(["indicator","country","year"], inplace=True)
-        out.to_csv(FOLDER_NAME+f"imf_weo_timeseries_{release_tag}.csv", index=False)
+        out.to_csv(common.DATA_FOLDER/f"imf_weo_timeseries_{release_tag}.csv", index=False)
         print(f"Saved {len(out):,} rows ...")
     else:
         print("No data retrieved! check indicators/countries/year ranges.")
