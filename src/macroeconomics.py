@@ -111,6 +111,7 @@ def makePlotly(df_input, indicator, save_html=True, suffix=None):
         plotname= common.FIGURE_FOLDER/('plot_'+indicator+suffix+".html")
         fig.write_html(plotname)
         print("file saved to:",plotname)
+    return fig
 
 
 if __name__ == "__main__":
