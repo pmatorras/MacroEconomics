@@ -7,6 +7,7 @@ import common
 from pathlib import Path
 
 def find_latest_files_and_year(data_folder):
+    '''Ensure the input file is the latest IMF information'''
     data_folder = Path(data_folder)
     patterns = {
         "timeseries": r"imf_weo_timeseries_(\d{4})_(april|october)\.csv",
@@ -31,7 +32,7 @@ def find_latest_files_and_year(data_folder):
             latest_files[key] = latest_file[0]
             years[key] = latest_file[2]
 
-    # Check if years differ between files
+    # Check if years differ between files and send a warning if so
     unique_years = set(years.values())
     if len(unique_years) > 1:
         print(f"Warning: Different data years found in files: {years}")
@@ -41,17 +42,64 @@ def find_latest_files_and_year(data_folder):
     latest_year = max_year = max(int(y) for y in years.values()) if years else None
     return latest_files, latest_year
 
-# Usage example
-latest_files, latest_year = find_latest_files_and_year(common.DATA_FOLDER)
+def notInDictionary(codes, dict):
+    '''Ensure the country codes are in the dictionary'''
+    missing_countries = set(codes) - set(dict.keys())
+    if missing_countries:
+        print("Warning: these country codes are missing from the dictionary:", missing_countries)
 
-TIMESERIES_FILE = latest_files.get("timeseries")
-COUNTRIES_FILE = latest_files.get("countries")
-INDICATORS_FILE = latest_files.get("indicators")
+def makePlotly(df_input, indicator):
+    '''Make an automatised plot using plotly given the df and the variable to plot. Uses IMF data'''
+    df= df_input[df_input["indicator"]==indicator]
+    df = df.copy()
+    df['line_style'] = df['year'].apply(lambda y: 'dash' if y >= latest_year else 'solid')
+    boundary_rows = df[df['year'] == latest_year]
+    df = pd.concat([
+        df,
+        boundary_rows.assign(line_style='solid'),
+        boundary_rows.assign(line_style='dash')
+    ], ignore_index=True)
+    df = df.sort_values(['country_name', 'year']).reset_index(drop=True)
 
-print(f"Using files from year: {latest_year}")
-print(f"Timeseries file: {TIMESERIES_FILE}")
-print(f"Countries file: {COUNTRIES_FILE}")
-print(f"Indicators file: {INDICATORS_FILE}")
+    units = df_indicators.loc[df_indicators['id'] == indicator, 'unit'].iloc[0]
+    fig = px.line(df, x='year', y='value', color='country_name', line_dash='line_style',
+            labels={'value': units, 'year': 'Year', 'country': 'Country'})
+    #Cleanup legend
+    for trace in fig.data:
+        if trace.line.dash == 'solid' and trace.name.endswith(", solid"):
+            trace.name = trace.name.replace(", solid", "")
+        if trace.line.dash != 'solid':
+            trace.showlegend = False
+    fig.update_layout(
+        title=dict(text=''),
+        xaxis_type='category',
+        annotations=[dict(
+            text=indicators_dict[indicator],
+            x=0.5,
+            y=1.01,
+            xref='paper',
+            yref='paper',
+            showarrow=False,
+            font=dict(size=26),
+            xanchor='center',
+            yanchor='bottom')],
+        xaxis=dict(
+            title_font=dict(size=16, family='Arial', color='black', weight='bold'),
+            tickfont=dict(size=14, family='Arial', color='black')
+        ),
+        yaxis=dict(
+            title_font=dict(size=16, family='Arial', color='black', weight='bold'),
+            tickfont=dict(size=14, family='Arial', color='black')
+        ),
+        legend_title_text='Country Name',
+        legend=dict(
+            font=dict(size=14),
+            bgcolor='rgba(255,255,255,0.7)',
+        )
+    )
+    plotname= common.FIGURE_FOLDER/('plot_'+indicator+".html")
+    fig.write_html(plotname)
+    print("file saved to:",plotname)
 
 
 if __name__ == "__main__":
@@ -62,6 +110,18 @@ if __name__ == "__main__":
     indicator_codes = common.chosen_indicators
     print (country_codes)
     
+
+    latest_files, latest_year = find_latest_files_and_year(common.DATA_FOLDER)
+
+    TIMESERIES_FILE = latest_files.get("timeseries")
+    COUNTRIES_FILE = latest_files.get("countries")
+    INDICATORS_FILE = latest_files.get("indicators")
+
+    print(f"Using files from year: {latest_year}")
+    print(f"Timeseries file: {TIMESERIES_FILE}")
+    print(f"Countries file: {COUNTRIES_FILE}")
+    print(f"Indicators file: {INDICATORS_FILE}")
+
     #Protect in case the csv gets to be extremely big
     filtered_chunks = []
     for chunk in pd.read_csv(TIMESERIES_FILE, chunksize=10000):
@@ -76,70 +136,11 @@ if __name__ == "__main__":
     indicators_dict = pd.Series(df_indicators_fil['label'].values, index=df_indicators_fil['id']).to_dict()
 
 
-    def notInDictionary(codes, dict):
-        missing_countries = set(codes) - set(dict.keys())
-        if missing_countries:
-            print("Warning: these country codes are missing from the dictionary:", missing_countries)
-    
-    print(indicators_dict, country_dict)
     notInDictionary(country_codes, country_dict)
     notInDictionary(indicator_codes,indicators_dict)
     df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
-    #plot_gdp_comparison(GDP_FILE_PATH, country_codes)
-    #plot_inflation(INFLATION_FILE_PATH, country_codes)
-    #plot_cumulative_inflation(INFLATION_FILE_PATH, country_codes)
-    print(df_timeseries)
-    for indicator in indicators_dict.keys():
-        df= df_timeseries[df_timeseries["indicator"]==indicator]
-        df = df.copy()
-        df['line_style'] = df['year'].apply(lambda y: 'dash' if y >= latest_year else 'solid')
-        boundary_rows = df[df['year'] == latest_year]
-        df = pd.concat([
-          df,
-          boundary_rows.assign(line_style='solid'),
-          boundary_rows.assign(line_style='dash')
-        ], ignore_index=True)
-        df = df.sort_values(['country_name', 'year']).reset_index(drop=True)
 
-        units = df_indicators.loc[df_indicators['id'] == indicator, 'unit'].iloc[0]
-        fig = px.line(df, x='year', y='value', color='country_name', line_dash='line_style',
-              labels={'value': units, 'year': 'Year', 'country': 'Country'})
-        #Cleanup legend
-        for trace in fig.data:
-            if trace.line.dash == 'solid' and trace.name.endswith(", solid"):
-                trace.name = trace.name.replace(", solid", "")
-            if trace.line.dash != 'solid':
-                trace.showlegend = False
-        fig.update_layout(
-            title=dict(text=''),
-            xaxis_type='category',
-            annotations=[dict(
-                text=indicators_dict[indicator],
-                x=0.5,
-                y=1.01,
-                xref='paper',
-                yref='paper',
-                showarrow=False,
-                font=dict(size=26),
-                xanchor='center',
-                yanchor='bottom')],
-            xaxis=dict(
-                title_font=dict(size=16, family='Arial', color='black', weight='bold'),
-                tickfont=dict(size=14, family='Arial', color='black')
-            ),
-            yaxis=dict(
-              title_font=dict(size=16, family='Arial', color='black', weight='bold'),
-              tickfont=dict(size=14, family='Arial', color='black')
-            ),
-            legend_title_text='Country Name',
-            legend=dict(
-              font=dict(size=14),
-             bgcolor='rgba(255,255,255,0.7)',
-            )
-        )
-        plotname= common.FIGURE_FOLDER/('plot_'+indicator+".html")
-        fig.write_html(plotname)
-        print("file saved to:",plotname)
-    #print(f"✅ Plots saved as '{FIGURE_FOLDER}gdp_since_2019_{get_country_suffix(country_codes)}.png', "
-    #      f"'{FIGURE_FOLDER}inflation_2019_{get_country_suffix(country_codes)}.png' and "
-    #      f"'{FIGURE_FOLDER}cumulative_inflation_{get_country_suffix(country_codes)}.png'")
+    for indicator in indicators_dict.keys():
+        makePlotly(df_timeseries, indicator)
+
+
