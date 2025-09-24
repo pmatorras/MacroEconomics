@@ -35,6 +35,12 @@ m.indicators_dict = indicators_dict
 # Dropdown options
 country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
 indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
+# Ensure numeric years for slider and filtering
+df_timeseries["year"] = pd.to_numeric(df_timeseries["year"], errors="coerce")
+# Compute bounds and marks
+years = sorted(y for y in df_timeseries["year"].dropna().unique())
+YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
+marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
 
 app = Dash(__name__)
 
@@ -72,31 +78,49 @@ app.layout = html.Div(
                         ),
                     ],
                 ),
+                html.Div(
+                    style={"minWidth": "320px", "flex": "1"},
+                    children=[
+                        html.Label("Years"),
+                        dcc.RangeSlider(
+                            id="year-range",
+                            min=YEAR_MIN,
+                            max=YEAR_MAX,
+                            value=[2010, YEAR_MAX],
+                            step=1,
+                            allowCross=False,
+                            marks=marks,
+                        ),
+                    ],
+                ),
             ],
         ),
         dcc.Graph(id="macro-graph", style={"height": "72vh"}),
     ],
 )
 
-# app.py (after reading CSVs)
-df_timeseries["year"] = pd.to_numeric(df_timeseries["year"], errors="coerce")
-# ... rest unchanged ...
+
 
 @app.callback(
     Output("macro-graph", "figure"),
     Input("countries", "value"),
     Input("indicator", "value"),
+    Input("year-range", "value"),
+
 )
-def update_graph(countries, indicator):
+def update_graph(countries, indicator, year_range):
     if not countries or not indicator:
         return {"data": [], "layout": {"title": {"text": ""}}}
+    y0, y1 = year_range if year_range else [YEAR_MIN, YEAR_MAX]
     df_sel = df_timeseries[
         (df_timeseries["country"].isin(countries)) &
-        (df_timeseries["indicator"] == indicator)
+        (df_timeseries["indicator"] == indicator) &
+        (df_timeseries["year"] >= y0) &
+        (df_timeseries["year"] <= y1)
     ]
     return m.makePlotly(df_sel, indicator, save_html=False)
 
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
