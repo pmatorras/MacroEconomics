@@ -5,6 +5,7 @@ import argparse
 import plotly.express as px
 import common
 from pathlib import Path
+os.makedirs(common.FIGURE_FOLDER, exist_ok=True)
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
     '''Ensure the input file is the latest IMF information'''

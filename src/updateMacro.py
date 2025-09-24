@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
 import common
+import argparse
 os.makedirs(common.DATA_FOLDER, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
@@ -108,11 +109,13 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
 
 def main():
 
-    release_tag = common.latest_weo_release_tag()
+    release_tag = latest_weo_release_tag()
 
     # Metadata
     countries = get_countries_df()
     indicators = get_indicators_df()
+
+    suffix = '_debug' if args.debug else ''
 
     countries.to_csv(common.DATA_FOLDER/f"imf_weo_countries_{release_tag}.csv", index=False)
     indicators.to_csv(common.DATA_FOLDER/f"imf_weo_indicators_{release_tag}.csv", index=False)
@@ -121,21 +124,21 @@ def main():
 
     # Validate indicators against metadata to avoid alias/fallback duplicates
     valid_set = set(indicators["id"].astype(str))
-    chosen_indicators = ["NGDPD"]#[i for i in common.chosen_indicators if i in valid_set]
+    chosen_indicators = args.indicators.split(',') if args.indicators else [i for i in common.chosen_indicators if i in valid_set]
     if not chosen_indicators:
         print("No valid indicators selected; exiting.")
         return
 
-    selected_countries = countries.loc[countries["id"].isin(common.countries_iso3), "id"].astype(str).tolist()
-
+    country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(common.countries_iso3), "id"].astype(str).tolist()
+    
     # Years: last 15 + next 5 (WEO projections)
     y = datetime.now().year
-    years = list(range(1991, y + 6))
+    years = list(range(1990, y + 6))
 
     frames = []
     for ind in chosen_indicators:
         print("processing:", ind)
-        df = fetch_timeseries_chunked(ind, selected_countries, years=years, chunk_size=40)
+        df = fetch_timeseries_chunked(ind, country_codes, years=years, chunk_size=40)
         if df is None or df.empty:
             print(f"Empty for {ind}, skipped")
             continue
@@ -152,10 +155,21 @@ def main():
         out = pd.concat(frames, ignore_index=True)
         out.drop_duplicates(subset=["indicator","country","year"], inplace=True)
         out.sort_values(["indicator","country","year"], inplace=True)
-        out.to_csv(common.DATA_FOLDER/f"imf_weo_timeseries_{release_tag}.csv", index=False)
-        print(f"Saved {len(out):,} rows ...")
+        timeseriesnm = common.DATA_FOLDER / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
+        out.to_csv(timeseriesnm, index=False)
+        print(f"Saved {len(out):,} rows to",timeseriesnm)
     else:
         print("No data retrieved! check indicators/countries/year ranges.")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Compare GDP and Inflation for selected countries")
+    parser.add_argument("-c", "--countries", type=str, help="Comma-separated list of country codes (e.g., ESP,DEU,ITA)")
+    parser.add_argument("-i", "--indicators", type=str, help="Comma-separated list of IMF indicators (e.g., PCPIEPCH)")
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
+
+    args = parser.parse_args()
+
+    if args.debug: 
+        args.countries='ESP,FRA'
+        args.indicators='PCPIEPCH'
     main()
