@@ -43,6 +43,7 @@ YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
 marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
 
 app = Dash(__name__)
+server = app.server  # expose Flask server for Gunicorn
 
 app.layout = html.Div(
     style={"maxWidth": "1100px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},

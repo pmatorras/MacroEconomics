@@ -1,6 +1,5 @@
 import pandas as pd
-import sys,re
-import matplotlib.pyplot as plt
+import sys,re, os
 import argparse
 import plotly.express as px
 import common
