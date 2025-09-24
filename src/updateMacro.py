@@ -11,13 +11,15 @@ BASE = "https://www.imf.org/external/datamapper/api/v1/"
 def latest_weo_release_tag(today=None):
     if today is None:
         today = datetime.now()
-    y, m = today.year, today.month
-    if m >= 10:
+    y, m, d = today.year, today.month, today.day
+    
+    if m > 10 or (m == 10 and d >= 23):  # after Oct 20
         return f"{y}_october"
-    elif m >= 4:
+    elif m > 4 or (m == 4 and d >= 23):   # after Apr 20
         return f"{y}_april"
     else:
         return f"{y-1}_october"
+
 
 def dm_get_json(path, timeout=60):
     url = BASE + path
@@ -106,7 +108,7 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
 
 def main():
 
-    release_tag = latest_weo_release_tag()
+    release_tag = common.latest_weo_release_tag()
 
     # Metadata
     countries = get_countries_df()
