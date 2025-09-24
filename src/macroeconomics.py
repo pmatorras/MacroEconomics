@@ -65,12 +65,20 @@ def makePlotly(df_input, indicator, save_html=True, suffix=None):
     units = df_indicators.loc[df_indicators['id'] == indicator, 'unit'].iloc[0]
     fig = px.line(df, x='year', y='value', color='country_name', line_dash='line_style',
             labels={'value': units, 'year': 'Year', 'country': 'Country'})
-    #Cleanup legend
+    # Cleanup legend: one entry per country that controls both solid & dashed
+    legend_shown_countries = set()
     for trace in fig.data:
-        if trace.line.dash == 'solid' and trace.name.endswith(", solid"):
-            trace.name = trace.name.replace(", solid", "")
-        if trace.line.dash != 'solid':
+        # Normalize: remove PX suffixes so both styles share one name/group
+        base_name = trace.name.replace(", solid", "").replace(", dash", "")
+        trace.name = base_name
+        trace.legendgroup = base_name
+        # Show only one legend entry per country
+        if base_name not in legend_shown_countries:
+            trace.showlegend = True
+            legend_shown_countries.add(base_name)
+        else:
             trace.showlegend = False
+
     fig.update_layout(
         title=dict(text=''),
         xaxis_type='category',
@@ -94,6 +102,7 @@ def makePlotly(df_input, indicator, save_html=True, suffix=None):
         ),
         legend_title_text='Country Name',
         legend=dict(
+            groupclick="togglegroup",
             font=dict(size=14),
             bgcolor='rgba(255,255,255,0.7)',
         )
