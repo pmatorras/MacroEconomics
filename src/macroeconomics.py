@@ -6,7 +6,7 @@ import plotly.express as px
 import common
 from pathlib import Path
 
-def find_latest_files_and_year(data_folder):
+def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
     '''Ensure the input file is the latest IMF information'''
     data_folder = Path(data_folder)
     patterns = {
@@ -35,10 +35,11 @@ def find_latest_files_and_year(data_folder):
     # Check if years differ between files and send a warning if so
     unique_years = set(years.values())
     if len(unique_years) > 1:
-        print(f"Warning: Different data years found in files: {years}")
-        cont = input("Continue with these files? (y/n): ")
-        if cont.lower() != 'y':
-            raise RuntimeError("Execution stopped by user due to mismatched file years.")
+        if prompt_on_mismatch:
+            print(f"Warning: Different data years found in files: {years}")
+            cont = input("Continue with these files? (y/n): ")
+            if cont.lower() != 'y':
+                raise RuntimeError("Execution stopped by user due to mismatched file years.")
     latest_year = max_year = max(int(y) for y in years.values()) if years else None
     return latest_files, latest_year
 
@@ -48,7 +49,7 @@ def notInDictionary(codes, dict):
     if missing_countries:
         print("Warning: these country codes are missing from the dictionary:", missing_countries)
 
-def makePlotly(df_input, indicator):
+def makePlotly(df_input, indicator, save_html=True, suffix=None):
     '''Make an automatised plot using plotly given the df and the variable to plot. Uses IMF data'''
     df= df_input[df_input["indicator"]==indicator]
     df = df.copy()
@@ -97,16 +98,17 @@ def makePlotly(df_input, indicator):
             bgcolor='rgba(255,255,255,0.7)',
         )
     )
-    plotname= common.FIGURE_FOLDER/('plot_'+indicator+".html")
-    fig.write_html(plotname)
-    print("file saved to:",plotname)
+    if save_html:
+        plotname= common.FIGURE_FOLDER/('plot_'+indicator+suffix+".html")
+        fig.write_html(plotname)
+        print("file saved to:",plotname)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compare GDP and Inflation for selected countries")
     parser.add_argument("-c", "--countries", type=str, help="Comma-separated list of country codes (e.g., ESP,DEU,ITA)")
     args = parser.parse_args()
-    country_codes = args.countries.split(",") if args.countries else ['ESP', 'FRA']
+    country_codes = args.countries.split(",") if args.countries else common.countries_iso3
     indicator_codes = common.chosen_indicators
     print (country_codes)
     
@@ -137,10 +139,11 @@ if __name__ == "__main__":
 
 
     notInDictionary(country_codes, country_dict)
+    country_suffix='_all' if country_codes is common.countries_iso3 else f"_{'_'.join(country_dict.keys())}"
     notInDictionary(indicator_codes,indicators_dict)
     df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 
     for indicator in indicators_dict.keys():
-        makePlotly(df_timeseries, indicator)
+        makePlotly(df_timeseries, indicator,save_html=True, suffix=country_suffix)
 
 
