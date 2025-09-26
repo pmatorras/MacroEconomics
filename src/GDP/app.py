@@ -5,7 +5,7 @@ import macroeconomics as m
 import common
 
 # Load latest files and prepare data
-latest_files, latest_year = m.find_latest_files_and_year(common.DATA_FOLDER, prompt_on_mismatch=False)
+latest_files, latest_year = m.find_latest_files_and_year(common.DATA_DIR, prompt_on_mismatch=False)
 
 TIMESERIES_FILE = latest_files.get("timeseries")
 COUNTRIES_FILE  = latest_files.get("countries")

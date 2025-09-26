@@ -5,7 +5,7 @@ from datetime import datetime
 from urllib.parse import quote
 import common
 import argparse
-os.makedirs(common.DATA_FOLDER, exist_ok=True)
+os.makedirs(common.DATA_DIR, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
 
@@ -117,8 +117,8 @@ def main():
 
     suffix = '_debug' if args.debug else ''
 
-    countries.to_csv(common.DATA_FOLDER/f"imf_weo_countries_{release_tag}.csv", index=False)
-    indicators.to_csv(common.DATA_FOLDER/f"imf_weo_indicators_{release_tag}.csv", index=False)
+    countries.to_csv(common.DATA_DIR/f"imf_weo_countries_{release_tag}.csv", index=False)
+    indicators.to_csv(common.DATA_DIR/f"imf_weo_indicators_{release_tag}.csv", index=False)
 
     # Choose indicators (remove stray/invalid IDs)
 
@@ -155,7 +155,7 @@ def main():
         out = pd.concat(frames, ignore_index=True)
         out.drop_duplicates(subset=["indicator","country","year"], inplace=True)
         out.sort_values(["indicator","country","year"], inplace=True)
-        timeseriesnm = common.DATA_FOLDER / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
+        timeseriesnm = common.DATA_DIR / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
         out.to_csv(timeseriesnm, index=False)
         print(f"Saved {len(out):,} rows to",timeseriesnm)
     else:

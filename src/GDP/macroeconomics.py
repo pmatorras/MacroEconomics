@@ -4,7 +4,7 @@ import argparse
 import plotly.express as px
 import common
 from pathlib import Path
-os.makedirs(common.FIGURE_FOLDER, exist_ok=True)
+os.makedirs(common.FIGURE_DIR, exist_ok=True)
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
     '''Ensure the input file is the latest IMF information'''
@@ -108,7 +108,7 @@ def makePlotly(df_input, indicator, save_html=True, suffix=None):
         )
     )
     if save_html:
-        plotname= common.FIGURE_FOLDER/('plot_'+indicator+suffix+".html")
+        plotname= common.FIGURE_DIR/('plot_'+indicator+suffix+".html")
         fig.write_html(plotname)
         print("file saved to:",plotname)
     return fig
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     print (country_codes)
     
 
-    latest_files, latest_year = find_latest_files_and_year(common.DATA_FOLDER)
+    latest_files, latest_year = find_latest_files_and_year(common.DATA_DIR)
 
     TIMESERIES_FILE = latest_files.get("timeseries")
     COUNTRIES_FILE = latest_files.get("countries")
