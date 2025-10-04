@@ -15,7 +15,7 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 - data.py: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
 - plot.py: utilities to resolve the latest CSV triplet, validate requested codes, and plot indicators with makePlotly; plot_main(args) orchestrates reading, filtering, and writing HTML charts.
 - dash_app.py: builds the Dash app, prepares in‑memory frames and metadata, registers update_graph as the callback, and exposes main(debug, host, port) to run the server.
-- main.py: CLI dispatcher with subcommands to fetch, plot, and run the Dash app by delegating into data_main, plot_main, and dash_app.main respectively.
+- main.py: CLI dispatcher with subcommands to fetch, plot, and run the Dash app by delegating into data_main, plot_main, and dash_app respectively.
 
 
 ### Setup
@@ -33,13 +33,13 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 ### Commands
 
 - Fetch IMF data:
-python -m macroeconomics.main fetch --indicators NGDPD,PCPIEPCH --countries ESP,FRA,DEU.
+python -m macroeconomics fetch --indicators NGDPD,PCPIEPCH --countries ESP,FRA,DEU.
     - Writes imf_weo_countries_{tag}.csv, imf_weo_indicators_{tag}.csv, and imf_weo_timeseries_{tag}[suffix].csv to DATA_DIR based on latest_weo_release_tag.
 - Generate plots:
-python -m macroeconomics.main plot --countries ESP,FRA,DEU.
+python -m macroeconomics plot --countries ESP,FRA,DEU.
     - Reads the latest CSVs, filters by countries, and writes one HTML per indicator to FIGURE_DIR with “plot_{indicator}{suffix}.html”.
 - Launch dashboard:
-python -m macroeconomics.main dash --host 127.0.0.1 --port 8050 --debug.
+python -m macroeconomics dash --host 127.0.0.1 --port 8050 --debug.
     - Starts a Dash app that loads the latest files, offers country/indicator selection and a year range slider, and renders the figure via update_graph.
 
 
@@ -58,7 +58,7 @@ python -m macroeconomics.main dash --host 127.0.0.1 --port 8050 --debug.
 ### Dashboard notes
 
 - Layout: country and indicator dropdowns, year range slider, and a main graph component, all wired to update_graph via @app.callback.
-- Entrypoint: dash_app.main(debug, host, port) runs app.run; server is also exposed as server for deployments.
+- Entrypoint: dash_app(debug, host, port) runs app.run; server is also exposed as server for deployments.
 
 
 ### Troubleshooting
