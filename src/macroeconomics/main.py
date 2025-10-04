@@ -1,7 +1,7 @@
 import argparse
 from types import SimpleNamespace
 
-import data, macroeconomics.plot as plot  # data.py in the same package
+import data, plot, dash_app  # data.py in the same package
 import common
 
 def cmd_fetch(ns):
@@ -19,6 +19,9 @@ def cmd_plot(ns):
     print("do plot", ns)
     plot.plot_main(ns)
 
+def cmd_dash(ns):
+    from dash_app import main as run_dash
+    run_dash(debug=ns.debug, host=ns.host, port=ns.port)
 
 def main():
     parser = argparse.ArgumentParser(prog="macroeconomics")
@@ -33,8 +36,12 @@ def main():
     p_plot = sub.add_parser("plot", help="Plot indicators from latest CSVs")
     p_plot.add_argument("--countries", help="Comma-separated ISO3 codes (e.g., ESP,FRA,DEU)")
     p_plot.set_defaults(func=cmd_plot)
+    p_dash = sub.add_parser("dash", help="Run the Dash app")
+    p_dash.add_argument("--host", default="127.0.0.1")
+    p_dash.add_argument("--port", type=int, default=8050)
+    p_dash.add_argument("--debug", action="store_true")
+    p_dash.set_defaults(func=cmd_dash)
     args = parser.parse_args()
     args.func(args)
-
 if __name__ == "__main__":
     main()

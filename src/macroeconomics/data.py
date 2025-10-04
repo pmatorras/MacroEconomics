@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
 import common
-import argparse
 os.makedirs(common.DATA_DIR, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"

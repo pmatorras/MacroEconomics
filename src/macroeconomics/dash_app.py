@@ -1,11 +1,12 @@
 # app.py
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
-import macroeconomics as m
+import plot
 import common
 
+
 # Load latest files and prepare data
-latest_files, latest_year = m.find_latest_files_and_year(common.DATA_DIR, prompt_on_mismatch=False)
+latest_files, latest_year = plot.find_latest_files_and_year(common.DATA_DIR, prompt_on_mismatch=False)
 
 TIMESERIES_FILE = latest_files.get("timeseries")
 COUNTRIES_FILE  = latest_files.get("countries")
@@ -28,9 +29,9 @@ indicators_dict    = pd.Series(df_indicators_fil['label'].values, index=df_indic
 
 df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 # Install module-level variables expected by makePlotly
-m.latest_year     = latest_year
-m.df_indicators   = df_indicators
-m.indicators_dict = indicators_dict
+plot.latest_year     = latest_year
+plot.df_indicators   = df_indicators
+plot.indicators_dict = indicators_dict
 
 # Dropdown options
 country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
@@ -109,6 +110,7 @@ app.layout = html.Div(
     Input("year-range", "value"),
 
 )
+
 def update_graph(countries, indicator, year_range):
     if not countries or not indicator:
         return {"data": [], "layout": {"title": {"text": ""}}}
@@ -119,9 +121,10 @@ def update_graph(countries, indicator, year_range):
         (df_timeseries["year"] >= y0) &
         (df_timeseries["year"] <= y1)
     ]
-    return m.makePlotly(df_sel, indicator, save_html=False)
 
-
+    return plot.makePlotly(df_sel, indicator, indicators_dict, df_indicators, latest_year, save_html=False)
+def main(debug=True, host="127.0.0.1", port=8050):
+    app.run(debug=debug, host=host, port=port)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()

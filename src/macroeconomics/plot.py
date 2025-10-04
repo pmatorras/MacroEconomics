@@ -1,6 +1,5 @@
 import pandas as pd
-import sys,re, os
-import argparse
+import re, os
 import plotly.express as px
 import common
 from pathlib import Path
