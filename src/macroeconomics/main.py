@@ -1,7 +1,7 @@
 import argparse
 from types import SimpleNamespace
 
-import data, plots  # data.py in the same package
+import data, macroeconomics.plot as plot  # data.py in the same package
 import common
 
 def cmd_fetch(ns):
@@ -17,7 +17,7 @@ def cmd_fetch(ns):
     data.data_main(args)
 def cmd_plot(ns):
     print("do plot", ns)
-    plots.plot_main(ns)
+    plot.plot_main(ns)
 
 
 def main():
