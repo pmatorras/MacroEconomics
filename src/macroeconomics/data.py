@@ -3,12 +3,17 @@ import requests
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
-import common
-import argparse
-os.makedirs(common.DATA_DIR, exist_ok=True)
+from .common import DATA_DIR, countries_iso3, chosen_indicators
+os.makedirs(DATA_DIR, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
-
+def get_selected_indicators(args, valid_set):
+    from macroeconomics import common
+    if getattr(args, "indicators", None):
+        return args.indicators.split(",")
+    else:
+        return [i for i in common.chosen_indicators if i in valid_set]
+    
 def latest_weo_release_tag(today=None):
     if today is None:
         today = datetime.now()
@@ -107,7 +112,7 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
 
     return pd.DataFrame(all_rows)
 
-def main():
+def data_main(args):
 
     release_tag = latest_weo_release_tag()
 
@@ -117,26 +122,32 @@ def main():
 
     suffix = '_debug' if args.debug else ''
 
-    countries.to_csv(common.DATA_DIR/f"imf_weo_countries_{release_tag}.csv", index=False)
-    indicators.to_csv(common.DATA_DIR/f"imf_weo_indicators_{release_tag}.csv", index=False)
+    countries.to_csv(DATA_DIR/f"imf_weo_countries_{release_tag}.csv", index=False)
+    indicators.to_csv(DATA_DIR/f"imf_weo_indicators_{release_tag}.csv", index=False)
 
     # Choose indicators (remove stray/invalid IDs)
 
     # Validate indicators against metadata to avoid alias/fallback duplicates
     valid_set = set(indicators["id"].astype(str))
-    chosen_indicators = args.indicators.split(',') if args.indicators else [i for i in common.chosen_indicators if i in valid_set]
+    chosen_indicators = get_selected_indicators(args, valid_set)
+    selected_indicators = (
+        args.indicators.split(",")
+        if getattr(args, "indicators", None)
+        else [i for i in chosen_indicators if i in valid_set]
+    )
     if not chosen_indicators:
         print("No valid indicators selected; exiting.")
         return
 
-    country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(common.countries_iso3), "id"].astype(str).tolist()
+    country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(countries_iso3), "id"].astype(str).tolist()
     
     # Years: last 15 + next 5 (WEO projections)
     y = datetime.now().year
     years = list(range(1990, y + 6))
 
+    print("Chosen indicators:", chosen_indicators)
     frames = []
-    for ind in chosen_indicators:
+    for ind in selected_indicators:
         print("processing:", ind)
         df = fetch_timeseries_chunked(ind, country_codes, years=years, chunk_size=40)
         if df is None or df.empty:
@@ -155,21 +166,9 @@ def main():
         out = pd.concat(frames, ignore_index=True)
         out.drop_duplicates(subset=["indicator","country","year"], inplace=True)
         out.sort_values(["indicator","country","year"], inplace=True)
-        timeseriesnm = common.DATA_DIR / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
+        timeseriesnm = DATA_DIR / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
         out.to_csv(timeseriesnm, index=False)
         print(f"Saved {len(out):,} rows to",timeseriesnm)
     else:
         print("No data retrieved! check indicators/countries/year ranges.")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compare GDP and Inflation for selected countries")
-    parser.add_argument("-c", "--countries", type=str, help="Comma-separated list of country codes (e.g., ESP,DEU,ITA)")
-    parser.add_argument("-i", "--indicators", type=str, help="Comma-separated list of IMF indicators (e.g., PCPIEPCH)")
-    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
-
-    args = parser.parse_args()
-
-    if args.debug: 
-        args.countries='ESP,FRA'
-        args.indicators='PCPIEPCH'
-    main()

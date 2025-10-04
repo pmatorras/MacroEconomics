@@ -1,11 +1,11 @@
 # app.py
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
-import macroeconomics as m
-import common
+from .plot import find_latest_files_and_year, makePlotly
+from .common import DATA_DIR, chosen_indicators
 
 # Load latest files and prepare data
-latest_files, latest_year = m.find_latest_files_and_year(common.DATA_DIR, prompt_on_mismatch=False)
+latest_files, latest_year = find_latest_files_and_year(DATA_DIR, prompt_on_mismatch=False)
 
 TIMESERIES_FILE = latest_files.get("timeseries")
 COUNTRIES_FILE  = latest_files.get("countries")
@@ -15,10 +15,11 @@ INDICATORS_FILE = latest_files.get("indicators")
 df_timeseries = pd.read_csv(TIMESERIES_FILE)
 df_countries  = pd.read_csv(COUNTRIES_FILE)
 df_indicators = pd.read_csv(INDICATORS_FILE)
-
+df_indicators_fil = df_indicators[df_indicators['id'].isin(chosen_indicators)]
+indicators_dict = pd.Series(df_indicators_fil['label'].values, index=df_indicators_fil['id']).to_dict()
 # Defaults
 default_countries  = ['ESP', 'FRA']
-default_indicators = common.chosen_indicators
+default_indicators = chosen_indicators
 
 df_countries_fil   = df_countries[df_countries['id'].isin(df_timeseries['country'].unique())]
 country_dict       = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
@@ -28,9 +29,9 @@ indicators_dict    = pd.Series(df_indicators_fil['label'].values, index=df_indic
 
 df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 # Install module-level variables expected by makePlotly
-m.latest_year     = latest_year
-m.df_indicators   = df_indicators
-m.indicators_dict = indicators_dict
+latest_year     = latest_year
+df_indicators   = df_indicators
+indicators_dict = indicators_dict
 
 # Dropdown options
 country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
@@ -109,6 +110,7 @@ app.layout = html.Div(
     Input("year-range", "value"),
 
 )
+
 def update_graph(countries, indicator, year_range):
     if not countries or not indicator:
         return {"data": [], "layout": {"title": {"text": ""}}}
@@ -119,9 +121,10 @@ def update_graph(countries, indicator, year_range):
         (df_timeseries["year"] >= y0) &
         (df_timeseries["year"] <= y1)
     ]
-    return m.makePlotly(df_sel, indicator, save_html=False)
 
-
+    return makePlotly(df_sel, indicator, indicators_dict, df_indicators, latest_year, save_html=False)
+def main(debug=True, host="127.0.0.1", port=8050):
+    app.run(debug=debug, host=host, port=port)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()

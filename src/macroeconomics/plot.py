@@ -1,10 +1,9 @@
 import pandas as pd
-import sys,re, os
-import argparse
+import re, os
 import plotly.express as px
-import common
+from .common import FIGURE_DIR, countries_iso3, chosen_indicators, DATA_DIR
 from pathlib import Path
-os.makedirs(common.FIGURE_DIR, exist_ok=True)
+os.makedirs(FIGURE_DIR, exist_ok=True)
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
     '''Ensure the input file is the latest IMF information'''
@@ -49,7 +48,7 @@ def notInDictionary(codes, dict):
     if missing_countries:
         print("Warning: these country codes are missing from the dictionary:", missing_countries)
 
-def makePlotly(df_input, indicator, save_html=True, suffix=None):
+def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year, save_html=True, suffix=None):
     '''Make an automatised plot using plotly given the df and the variable to plot. Uses IMF data'''
     df= df_input[df_input["indicator"]==indicator]
     df = df.copy()
@@ -108,22 +107,19 @@ def makePlotly(df_input, indicator, save_html=True, suffix=None):
         )
     )
     if save_html:
-        plotname= common.FIGURE_DIR/('plot_'+indicator+suffix+".html")
+        plotname= FIGURE_DIR/('plot_'+indicator+suffix+".html")
         fig.write_html(plotname)
         print("file saved to:",plotname)
     return fig
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compare GDP and Inflation for selected countries")
-    parser.add_argument("-c", "--countries", type=str, help="Comma-separated list of country codes (e.g., ESP,DEU,ITA)")
-    args = parser.parse_args()
-    country_codes = args.countries.split(",") if args.countries else common.countries_iso3
-    indicator_codes = common.chosen_indicators
-    print (country_codes)
-    
+def plot_main(args):
 
-    latest_files, latest_year = find_latest_files_and_year(common.DATA_DIR)
+    country_codes = args.countries.split(",") if args.countries else countries_iso3
+    indicator_codes = chosen_indicators
+    print (country_codes)
+
+    latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
 
     TIMESERIES_FILE = latest_files.get("timeseries")
     COUNTRIES_FILE = latest_files.get("countries")
@@ -149,11 +145,9 @@ if __name__ == "__main__":
 
 
     notInDictionary(country_codes, country_dict)
-    country_suffix='_all' if country_codes is common.countries_iso3 else f"_{'_'.join(country_dict.keys())}"
+    country_suffix='_all' if country_codes is countries_iso3 else f"_{'_'.join(country_dict.keys())}"
     notInDictionary(indicator_codes,indicators_dict)
     df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 
     for indicator in indicators_dict.keys():
-        makePlotly(df_timeseries, indicator,save_html=True, suffix=country_suffix)
-
-
+        makePlotly(df_timeseries, indicator,indicators_dict, df_indicators, latest_year, save_html=True, suffix=country_suffix)
