@@ -5,7 +5,6 @@ A lightweight project to display several macroeconomic indicators, intended as a
 ### Overview
 
 This repository’s purpose is to organize code and documentation for collecting, processing, and visualizing macroeconomic time series in a clear, reproducible workflow.
-The structure and sections below follow widely accepted README best practices to help users understand what the project does, how to run it, and how to contribute.
 
 ### Required dependencies
 the required dependencies are obtained via:
@@ -34,4 +33,4 @@ Interactive plots via dash:
 ```
 python app.py
 ```
-This code has been designed to run on online tools such as [Render.com](https://macroeconomics-22w4.onrender.com)
+This code has been designed to be able to run interactively on [Render.com](https://macroeconomics-22w4.onrender.com)
