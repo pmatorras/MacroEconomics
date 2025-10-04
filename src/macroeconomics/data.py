@@ -107,7 +107,7 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
 
     return pd.DataFrame(all_rows)
 
-def main():
+def data_main(args):
 
     release_tag = latest_weo_release_tag()
 
@@ -161,15 +161,3 @@ def main():
     else:
         print("No data retrieved! check indicators/countries/year ranges.")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Compare GDP and Inflation for selected countries")
-    parser.add_argument("-c", "--countries", type=str, help="Comma-separated list of country codes (e.g., ESP,DEU,ITA)")
-    parser.add_argument("-i", "--indicators", type=str, help="Comma-separated list of IMF indicators (e.g., PCPIEPCH)")
-    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
-
-    args = parser.parse_args()
-
-    if args.debug: 
-        args.countries='ESP,FRA'
-        args.indicators='PCPIEPCH'
-    main()

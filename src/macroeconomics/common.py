@@ -7,5 +7,6 @@ countries_iso3 = ["AUT","BEL","BGR","HRV","CYP","CZE","DNK","EST","FIN","FRA","D
            "IRL","ITA","LVA","LTU","LUX","MLT","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE", "USA", "PHL", "CHN", "KOR", "CHE", "CHL", "JPN", "IND", "THA", "UZB", "VNM",  "RUS", "UKR"]
 DATA_DIR = ROOT_DIR /"data/"
 FIGURE_DIR = ROOT_DIR/ "figures/"
-for p in (DATA_DIR, FIGURE_DIR):
-    p.mkdir(parents=True, exist_ok=True)
+def ensure_dirs():
+    for p in (DATA_DIR, FIGURE_DIR):
+        p.mkdir(parents=True, exist_ok=True)
