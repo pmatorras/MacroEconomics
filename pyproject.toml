@@ -5,24 +5,30 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "macroeconomics"
 version = "0.1.0"
-description = "Macroeconomic data pipelines, features and forecasting"
+description = "IMF WEO data fetch, plotting, and Dash app"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
+  "requests",
   "pandas",
-  "numpy",
-  "scikit-learn",
-  "matplotlib",
+  "plotly",
+  "dash"
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "jupyter"]
 
-[tool.pytest.ini_options]
-addopts = "-q"
-testpaths = ["tests"]
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["macroeconomics*"]
+
+[project.scripts]
+macroe = "macroeconomics.main:main"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 addopts = "-q"
+testpaths = ["tests"]

@@ -1,26 +1,26 @@
 import argparse
 from types import SimpleNamespace
 
-import data, plot, dash_app  # data.py in the same package
-import common
+from .data import data_main
+from .plot import plot_main  # data.py in the same package
+from .common import ensure_dirs
 
 def cmd_fetch(ns):
     # Ensure output directories exist if using common paths
-    if hasattr(common, "ensure_dirs"):
-        common.ensure_dirs()
+    ensure_dirs()
     # Build the args object expected by data_main
     args = SimpleNamespace(
         indicators=ns.indicators,   # comma-separated string or None
         countries=ns.countries,     # comma-separated string or None
         debug=ns.debug,             # bool
     )
-    data.data_main(args)
+    data_main(args)
 def cmd_plot(ns):
     print("do plot", ns)
-    plot.plot_main(ns)
+    plot_main(ns)
 
 def cmd_dash(ns):
-    from dash_app import main as run_dash
+    from .dash_app import main as run_dash
     run_dash(debug=ns.debug, host=ns.host, port=ns.port)
 
 def main():
