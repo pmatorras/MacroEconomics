@@ -16,12 +16,11 @@ ensure_dirs()
 # Import main functions for easy access
 from .data import data_main
 from .plot import plot_main  
-from .dash_app import main as dash_main
+#from .dash_app import main as dash_main
 
 # Define what gets imported with "from macroeconomics import *"
 __all__ = [
     'data_main',
     'plot_main', 
-    'dash_main'
 ]
 
