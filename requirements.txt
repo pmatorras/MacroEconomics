@@ -3,6 +3,6 @@ numpy==2.2.1
 plotly==5.24.1
 requests==2.32.3
 dash==3.2.0
-gunicorn==22.0
+gunicorn==22.0 #waitress==3.0.2 # If from Windows
+python-dotenv
 
-#waitress==3.0.2 # If from Windows

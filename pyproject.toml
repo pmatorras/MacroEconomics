@@ -13,7 +13,8 @@ dependencies = [
   "requests",
   "pandas",
   "plotly",
-  "dash"
+  "dash",
+  "python-dotenv"
 ]
 
 [project.optional-dependencies]
@@ -32,3 +33,7 @@ macroe = "macroeconomics.main:main"
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.0"
