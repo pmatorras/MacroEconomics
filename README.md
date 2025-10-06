@@ -19,7 +19,7 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
     - [Troubleshooting](#troubleshooting)
     - [Extending data](#extending-data)
 
-### Project structure
+## Project structure
 
 - `common.py`: central paths and defaults, including DATA_DIR, FIGURE_DIR, chosen_indicators, countries_iso3, and an ensure_dirs() helper for directory creation.
 - `data.py`: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
