@@ -2,12 +2,22 @@
 
 A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launch an interactive Dash dashboard, organized for reuse across CLI and app workflows.
 
-### Features
+### Features 
 
 - Data fetch: downloads country, indicator metadata, and timeseries from the IMF Datamapper API and writes versioned CSVs into the data folder with a release tag inferred from date logic.
 - Plotting: creates per‑indicator Plotly HTML charts for selected countries, with a dashed/solid style boundary at the latest projection year and a clean legend treatment.
 - Dashboard: Dash app with country and indicator dropdowns plus a year range slider, rendering the same plot logic interactively via a registered callback.
 
+## Table of Contents
+- [Project structure](#project-structure)
+- [Setup](#setup)
+- [Quick start](#quick-start)
+    - [Commands](#commands)
+    - [Data outputs](#data-outputs)
+    - [Plot details](#plot-details)
+    - [Dashboard notes](#dashboard-notes)
+    - [Troubleshooting](#troubleshooting)
+    - [Extending data](#extending-data)
 
 ### Project structure
 
@@ -101,7 +111,7 @@ python -m macroeconomics dash --host 127.0.0.1 --port 8050 --debug.
 - “update_graph takes N args” errors: ensure the function signature matches the number and order of Inputs/States in the @app.callback decorator for the dashboard.
 
 
-### Extending
+### Extending data
 
 - Add indicators/countries: set via CLI strings like --indicators NGDPD,PCPIEPCH and --countries ESP,FRA,DEU, or adjust defaults in common.py.
 - Batch pipeline: combine fetch and plot by invoking the two subcommands sequentially, or add a pipeline subcommand that forwards shared args into data_main and plot_main.
