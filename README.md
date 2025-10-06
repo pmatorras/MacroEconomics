@@ -20,7 +20,7 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 - `wsgi.py`: creates an app for the web render to work with.
 
 
-### Setup
+## Setup
 1. **Download the Github repository**
 ```
 git@github.com:pmatorras/MacroEconomics.git
@@ -39,7 +39,26 @@ pip install -e.
 ```
 For development, performing `pip install -r requirement.txt` might be required
 
-### Quick start
+4. **Environment setup**
+- Generate a secure key locally:
+```
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+- Create a .env file at the project root and add:
+```
+SECRET_KEY=<paste a long random value>
+```
+
+- Copy the output into SECRET_KEY.
+    - If using online tools like [Render.com](https://dashboard.render.com/) allow to define the enviromental variable on their platform, so its not recommended to include `.env` into the Github repository.
+
+
+
+This key is used by the Dash/Flask server for session signing. It must be non-empty in production.
+
+
+
+## Quick start
 
 - From the repository root, ensure the package is importable and paths resolve by running commands with python -m; the commands below call the CLI defined in main.py.
 - Before writing outputs, ensure data and figures folders exist; the CLI will call ensure_dirs() if present, or create on write as needed.

@@ -18,8 +18,9 @@ def cmd_plot(ns):
     plot_main(ns)
 
 def cmd_dash(ns):
-    from .dash_app import main as run_dash
-    run_dash(debug=ns.debug, host=ns.host, port=ns.port)
+    from .dash_app import create_app
+    app = create_app()
+    app.run(debug=ns.debug, host=ns.host, port=ns.port)
 
 def main():
     parser = argparse.ArgumentParser(prog="macroeconomics")
