@@ -3,6 +3,7 @@ import re, os
 import plotly.express as px
 from .common import FIGURE_DIR, countries_iso3, chosen_indicators, DATA_DIR
 from pathlib import Path
+from .logging_config import logger
 os.makedirs(FIGURE_DIR, exist_ok=True)
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
@@ -35,7 +36,7 @@ def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
     unique_years = set(years.values())
     if len(unique_years) > 1:
         if prompt_on_mismatch:
-            print(f"Warning: Different data years found in files: {years}")
+            logger.warning(f"Different data years found in files: {years}")
             cont = input("Continue with these files? (y/n): ")
             if cont.lower() != 'y':
                 raise RuntimeError("Execution stopped by user due to mismatched file years.")
@@ -46,7 +47,7 @@ def notInDictionary(codes, dict):
     '''Ensure the country codes are in the dictionary'''
     missing_countries = set(codes) - set(dict.keys())
     if missing_countries:
-        print("Warning: these country codes are missing from the dictionary:", missing_countries)
+        logger.warning("These country codes are missing from the dictionary:", missing_countries)
 
 def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year, save_html=True, suffix=None):
     '''Make an automatised plot using plotly given the df and the variable to plot. Uses IMF data'''
@@ -109,7 +110,7 @@ def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year,
     if save_html:
         plotname= FIGURE_DIR/('plot_'+indicator+suffix+".html")
         fig.write_html(plotname)
-        print("file saved to:",plotname)
+        logger.info(f"file saved to:{plotname}")
     return fig
 
 
@@ -117,7 +118,7 @@ def plot_main(args):
 
     country_codes = args.countries.split(",") if args.countries else countries_iso3
     indicator_codes = chosen_indicators
-    print (country_codes)
+    logger.info(country_codes)
 
     latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
 
@@ -125,10 +126,10 @@ def plot_main(args):
     COUNTRIES_FILE = latest_files.get("countries")
     INDICATORS_FILE = latest_files.get("indicators")
 
-    print(f"Using files from year: {latest_year}")
-    print(f"Timeseries file: {TIMESERIES_FILE}")
-    print(f"Countries file: {COUNTRIES_FILE}")
-    print(f"Indicators file: {INDICATORS_FILE}")
+    logger.info(f"Using files from year: {latest_year}")
+    logger.info(f"Timeseries file: {TIMESERIES_FILE}")
+    logger.info(f"Countries file: {COUNTRIES_FILE}")
+    logger.info(f"Indicators file: {INDICATORS_FILE}")
 
     #Protect in case the csv gets to be extremely big
     filtered_chunks = []

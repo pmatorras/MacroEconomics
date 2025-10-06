@@ -15,6 +15,11 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+# log data and fig directories
+logs/
+data/
+figures/
 
 # Jupyter
 .ipynb_checkpoints/
+

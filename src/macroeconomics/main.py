@@ -2,12 +2,10 @@ import argparse
 from types import SimpleNamespace
 
 from .data import data_main
-from .plot import plot_main  # data.py in the same package
+from .plot import plot_main 
 from .common import ensure_dirs
 
-def cmd_fetch(ns):
-    # Ensure output directories exist if using common paths
-    ensure_dirs()
+def cmd_fetch(ns):    
     # Build the args object expected by data_main
     args = SimpleNamespace(
         indicators=ns.indicators,   # comma-separated string or None

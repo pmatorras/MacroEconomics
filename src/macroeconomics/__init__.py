@@ -8,6 +8,11 @@ and launch an interactive Dash dashboard.
 __version__ = "0.2.0"
 __author__ = "Pablo Matorras-Cuevas"
 
+# Package-level configuration
+from .common import ensure_dirs
+
+# Ensure directories exist when package is imported
+ensure_dirs()
 # Import main functions for easy access
 from .data import data_main
 from .plot import plot_main  
@@ -20,8 +25,3 @@ __all__ = [
     'dash_main'
 ]
 
-# Package-level configuration
-from .common import ensure_dirs
-
-# Ensure directories exist when package is imported
-ensure_dirs()
