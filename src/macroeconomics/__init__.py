@@ -1,21 +1,27 @@
-# src/macroeconomics/__init__.py
-from .data import (
-    latest_weo_release_tag,
-    get_countries_df,
-    get_indicators_df,
-    # build_weo_timeseries  # add once refactored as pure builder
-)
+"""
+MacroEconomics Toolkit
 
-from .plot import (
-    find_latest_files_and_year,
-    # build_indicator_figure  # add once refactored to be pure
-)
+A lightweight toolkit to fetch IMF WEO data, generate indicator plots, 
+and launch an interactive Dash dashboard.
+"""
 
+__version__ = "0.2.0"
+__author__ = "Pablo Matorras-Cuevas"
+
+# Import main functions for easy access
+from .data import data_main
+from .plot import plot_main  
+from .dash_app import main as dash_main
+
+# Define what gets imported with "from macroeconomics import *"
 __all__ = [
-    "latest_weo_release_tag",
-    "get_countries_df",
-    "get_indicators_df",
-    "find_latest_files_and_year",
-    # "build_weo_timeseries",
-    # "build_indicator_figure",
+    'data_main',
+    'plot_main', 
+    'dash_main'
 ]
+
+# Package-level configuration
+from .common import ensure_dirs
+
+# Ensure directories exist when package is imported
+ensure_dirs()
