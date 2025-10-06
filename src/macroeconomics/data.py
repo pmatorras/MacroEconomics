@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
+from .logging_config import logger
 from .common import DATA_DIR, countries_iso3, chosen_indicators
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -66,7 +67,7 @@ def fetch_timeseries_chunked(indicator_id, country_ids, years=None, chunk_size=5
         try:
             js = dm_get_json(path, timeout=timeout)
         except requests.HTTPError as e:
-            print(f"Batch failed ({len(batch)} IDs): {e}")
+            logger.info(f"Batch failed ({len(batch)} IDs): {e}")
             continue  # skip this batch, try next
 
         # Prefer values[indicator_id] when present; fall back to js['data'] only if it matches shape.
@@ -136,7 +137,7 @@ def data_main(args):
         else [i for i in chosen_indicators if i in valid_set]
     )
     if not chosen_indicators:
-        print("No valid indicators selected; exiting.")
+        logger.error("No valid indicators selected; exiting.")
         return
 
     country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(countries_iso3), "id"].astype(str).tolist()
@@ -145,13 +146,14 @@ def data_main(args):
     y = datetime.now().year
     years = list(range(1990, y + 6))
 
-    print("Chosen indicators:", chosen_indicators)
+    print(type(chosen_indicators))
+    logger.info(f"Chosen indicators: {chosen_indicators}")
     frames = []
     for ind in selected_indicators:
-        print("processing:", ind)
+        logger.info(f"processing: {ind}")
         df = fetch_timeseries_chunked(ind, country_codes, years=years, chunk_size=40)
         if df is None or df.empty:
-            print(f"Empty for {ind}, skipped")
+            logger.warning(f"Empty for {ind}, skipped")
             continue
         # Ensure correct indicator label
         if "indicator" not in df.columns:
@@ -168,7 +170,7 @@ def data_main(args):
         out.sort_values(["indicator","country","year"], inplace=True)
         timeseriesnm = DATA_DIR / f"imf_weo_timeseries_{release_tag}{suffix}.csv"
         out.to_csv(timeseriesnm, index=False)
-        print(f"Saved {len(out):,} rows to",timeseriesnm)
+        logger.info(f"Saved {len(out):,} rows to {timeseriesnm}")
     else:
-        print("No data retrieved! check indicators/countries/year ranges.")
+        logger.error("No data retrieved! check indicators/countries/year ranges.")
 
