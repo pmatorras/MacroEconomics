@@ -11,18 +11,33 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 
 ### Project structure
 
-- common.py: central paths and defaults, including DATA_DIR, FIGURE_DIR, chosen_indicators, countries_iso3, and an ensure_dirs() helper for directory creation.
-- data.py: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
-- plot.py: utilities to resolve the latest CSV triplet, validate requested codes, and plot indicators with makePlotly; plot_main(args) orchestrates reading, filtering, and writing HTML charts.
-- dash_app.py: builds the Dash app, prepares in‑memory frames and metadata, registers update_graph as the callback, and exposes main(debug, host, port) to run the server.
-- main.py: CLI dispatcher with subcommands to fetch, plot, and run the Dash app by delegating into data_main, plot_main, and dash_app respectively.
+- `common.py`: central paths and defaults, including DATA_DIR, FIGURE_DIR, chosen_indicators, countries_iso3, and an ensure_dirs() helper for directory creation.
+- `data.py`: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
+- `plot.py`: utilities to resolve the latest CSV triplet, validate requested codes, and plot indicators with makePlotly; plot_main(args) orchestrates reading, filtering, and writing HTML charts.
+- `dash_app.py`: builds the Dash app, prepares in‑memory frames and metadata, registers update_graph as the callback, and exposes main(debug, host, port) to run the server.
+- `main.py`: CLI dispatcher with subcommands to fetch, plot, and run the Dash app by delegating into data_main, plot_main, and dash_app respectively.
+- `logging_config.py`: stores the output information into log files
+- `wsgi.py`: creates an app for the web render to work with.
 
 
 ### Setup
+1. **Download the Github repository**
+```
+git@github.com:pmatorras/MacroEconomics.git
+```
+2. **Create and activate a virtual environment:**
 
-- Dependencies are inferred from imports: requests (HTTP), pandas (dataframes), plotly (charts), dash (web app).
-- Directory layout assumes a src layout with the package and that common.ROOT_DIR points to the repository root via Path(__file__).resolve().parents for data/ and figures/.
+```
+python3 -m venv venv
+source venv/bin/activate # On Windows: venv\Scripts\activate
+```
+(this file is ignored by `.gitignore`)
 
+3. **Installing dependencies**:
+```
+pip install -e.
+```
+For development, performing `pip install -r requirement.txt` might be required
 
 ### Quick start
 

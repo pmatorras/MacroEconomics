@@ -22,4 +22,5 @@ figures/
 
 # Jupyter
 .ipynb_checkpoints/
+.venv/
 

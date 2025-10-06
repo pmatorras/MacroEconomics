@@ -1,5 +1,6 @@
 # app.py
 import pandas as pd
+import os
 from dash import Dash, dcc, html, Input, Output
 from .plot import find_latest_files_and_year, makePlotly
 from .common import DATA_DIR, chosen_indicators
@@ -123,6 +124,13 @@ def update_graph(countries, indicator, year_range):
     ]
 
     return makePlotly(df_sel, indicator, indicators_dict, df_indicators, latest_year, save_html=False)
+def create_app():
+    app = Dash(__name__)
+    # Your layout and callbacks...
+    app.server.config.update(
+        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret")
+    )
+    return app
 def main(debug=True, host="127.0.0.1", port=8050):
     app.run(debug=debug, host=host, port=port)
 
