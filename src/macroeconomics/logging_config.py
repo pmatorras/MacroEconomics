@@ -1,7 +1,7 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from .common import LOG_DIR
+from macroeconomics.common import LOG_DIR
 
 def setup_logging():
     """Configure logging for production and development environments."""

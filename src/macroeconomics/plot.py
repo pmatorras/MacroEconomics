@@ -1,9 +1,10 @@
 import pandas as pd
 import re, os
 import plotly.express as px
-from .common import FIGURE_DIR, countries_iso3, chosen_indicators, DATA_DIR
+from macroeconomics.common import FIGURE_DIR, COUNTRIES_ISO3, INDICATORS, DATA_DIR
+from macroeconomics.logging_config import logger
 from pathlib import Path
-from .logging_config import logger
+
 os.makedirs(FIGURE_DIR, exist_ok=True)
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
@@ -116,8 +117,8 @@ def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year,
 
 def plot_main(args):
 
-    country_codes = args.countries.split(",") if args.countries else countries_iso3
-    indicator_codes = chosen_indicators
+    country_codes = args.countries.split(",") if args.countries else COUNTRIES_ISO3
+    indicator_codes = INDICATORS
     logger.info(country_codes)
 
     latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
@@ -146,7 +147,7 @@ def plot_main(args):
 
 
     notInDictionary(country_codes, country_dict)
-    country_suffix='_all' if country_codes is countries_iso3 else f"_{'_'.join(country_dict.keys())}"
+    country_suffix='_all' if country_codes is COUNTRIES_ISO3 else f"_{'_'.join(country_dict.keys())}"
     notInDictionary(indicator_codes,indicators_dict)
     df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 

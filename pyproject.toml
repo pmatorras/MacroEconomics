@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "jupyter"]
+dev = ["pytest"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

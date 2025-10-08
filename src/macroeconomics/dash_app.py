@@ -2,8 +2,8 @@
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from .plot import find_latest_files_and_year, makePlotly
-from .common import DATA_DIR, chosen_indicators
+from macroeconomics.plot import find_latest_files_and_year, makePlotly
+from macroeconomics.common import DATA_DIR, INDICATORS
 
 # Load latest files and prepare data
 latest_files, latest_year = find_latest_files_and_year(DATA_DIR, prompt_on_mismatch=False)
@@ -16,11 +16,11 @@ INDICATORS_FILE = latest_files.get("indicators")
 df_timeseries = pd.read_csv(TIMESERIES_FILE)
 df_countries  = pd.read_csv(COUNTRIES_FILE)
 df_indicators = pd.read_csv(INDICATORS_FILE)
-df_indicators_fil = df_indicators[df_indicators['id'].isin(chosen_indicators)]
+df_indicators_fil = df_indicators[df_indicators['id'].isin(INDICATORS)]
 indicators_dict = pd.Series(df_indicators_fil['label'].values, index=df_indicators_fil['id']).to_dict()
 # Defaults
 default_countries  = ['ESP', 'FRA']
-default_indicators = chosen_indicators
+default_indicators = INDICATORS
 
 df_countries_fil   = df_countries[df_countries['id'].isin(df_timeseries['country'].unique())]
 country_dict       = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
