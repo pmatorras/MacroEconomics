@@ -7,7 +7,7 @@ from pathlib import Path
 
 os.makedirs(FIGURE_DIR, exist_ok=True)
 
-def find_latest_files_and_year(data_folder, prompt_on_mismatch=True):
+def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
     '''Ensure the input file is the latest IMF information'''
     data_folder = Path(data_folder)
     patterns = {

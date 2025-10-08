@@ -2,14 +2,24 @@
 
 A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launch an interactive Dash dashboard, organized for reuse across CLI and app workflows.
 
-### Features
+### Features 
 
 - Data fetch: downloads country, indicator metadata, and timeseries from the IMF Datamapper API and writes versioned CSVs into the data folder with a release tag inferred from date logic.
 - Plotting: creates per‑indicator Plotly HTML charts for selected countries, with a dashed/solid style boundary at the latest projection year and a clean legend treatment.
 - Dashboard: Dash app with country and indicator dropdowns plus a year range slider, rendering the same plot logic interactively via a registered callback.
 
+## Table of Contents
+- [Project structure](#project-structure)
+- [Setup](#setup)
+- [Quick start](#quick-start)
+    - [Commands](#commands)
+    - [Data outputs](#data-outputs)
+    - [Plot details](#plot-details)
+    - [Dashboard notes](#dashboard-notes)
+    - [Troubleshooting](#troubleshooting)
+    - [Extending data](#extending-data)
 
-### Project structure
+## Project structure
 
 - `common.py`: central paths and defaults, including DATA_DIR, FIGURE_DIR, chosen_indicators, countries_iso3, and an ensure_dirs() helper for directory creation.
 - `data.py`: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
@@ -20,7 +30,7 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 - `wsgi.py`: creates an app for the web render to work with.
 
 
-### Setup
+## Setup
 1. **Download the Github repository**
 ```
 git@github.com:pmatorras/MacroEconomics.git
@@ -39,7 +49,26 @@ pip install -e.
 ```
 For development, performing `pip install -r requirement.txt` might be required
 
-### Quick start
+4. **Environment setup**
+- Generate a secure key locally:
+```
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+- Create a .env file at the project root and add:
+```
+SECRET_KEY=<paste a long random value>
+```
+
+- Copy the output into SECRET_KEY.
+    - If using online tools like [Render.com](https://dashboard.render.com/) allow to define the enviromental variable on their platform, so its not recommended to include `.env` into the Github repository.
+
+
+
+This key is used by the Dash/Flask server for session signing. It must be non-empty in production.
+
+
+
+## Quick start
 
 - From the repository root, ensure the package is importable and paths resolve by running commands with python -m; the commands below call the CLI defined in main.py.
 - Before writing outputs, ensure data and figures folders exist; the CLI will call ensure_dirs() if present, or create on write as needed.
@@ -82,7 +111,7 @@ python -m macroeconomics dash --host 127.0.0.1 --port 8050 --debug.
 - “update_graph takes N args” errors: ensure the function signature matches the number and order of Inputs/States in the @app.callback decorator for the dashboard.
 
 
-### Extending
+### Extending data
 
 - Add indicators/countries: set via CLI strings like --indicators NGDPD,PCPIEPCH and --countries ESP,FRA,DEU, or adjust defaults in common.py.
 - Batch pipeline: combine fetch and plot by invoking the two subcommands sequentially, or add a pipeline subcommand that forwards shared args into data_main and plot_main.

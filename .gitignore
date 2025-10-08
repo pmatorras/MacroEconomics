@@ -2,9 +2,10 @@
 __pycache__/
 *.py[cod]
 
-# Virtual environments
+# Environments
 .venv/
 venv/
+.env 
 
 # Builds and packaging
 build/
@@ -22,5 +23,4 @@ figures/
 
 # Jupyter
 .ipynb_checkpoints/
-.venv/
 
