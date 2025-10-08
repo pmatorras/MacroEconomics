@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Iterable
+from importlib.resources import files
 
 # Project root directory (repo/src/macroeconomics/common.py -> parents[2] == repo/)
 ROOT_DIR: Path = Path(__file__).resolve().parents[2]
@@ -40,7 +41,8 @@ GEOBOUNDARIES_URL: str = (
 )
 DEFAULT_FEATUREIDKEY = "properties.ISO_A3"
 
-ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets"
+ASSETS_DIR = files("macroeconomics").joinpath("assets")
+
 
 DEFAULT_GEOJSON = ASSETS_DIR / "world_countries.geojson"
 
@@ -48,6 +50,6 @@ def ensure_dirs(paths: Iterable[Path] | None = None) -> None:
     """
     Create output directories if they don't exist (idempotent).
     """
-    targets = tuple(paths) if paths else (DATA_DIR, FIGURE_DIR, LOG_DIR)
+    targets = tuple(paths) if paths else (DATA_DIR, FIGURE_DIR, LOG_DIR,ASSETS_DIR)
     for p in targets:
         p.mkdir(parents=True, exist_ok=True)
