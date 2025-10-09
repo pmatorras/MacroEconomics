@@ -5,4 +5,4 @@ requests==2.32.3
 dash==3.2.0
 gunicorn==22.0 #waitress==3.0.2 # If from Windows
 python-dotenv
-
+shapely==2.1.2

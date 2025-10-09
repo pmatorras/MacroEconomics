@@ -17,24 +17,25 @@ INDICATORS: tuple[str, ...] = (
     "LP", "NGDPD", "PPPPC", "NGDPDPC", "PCPIEPCH", "LUR", "NGDP_RPCH"
 )
 
-# ISO3 codes used across dashboards
-COUNTRIES_ISO3: tuple[str, ...] = (
-    "AUT","BEL","BGR","HRV","CYP","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN",
-    "IRL","ITA","LVA","LTU","LUX","MLT","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE",
-    "USA","PHL","CHN","KOR","CHE","CHL","JPN","IND","THA","UZB","VNM","RUS","UKR"
-)
-
-# Europe whitelist for choropleths (use set for fast membership)
+# Europe base set
 EUROPE_ISO3: frozenset[str] = frozenset((
     "ALB","AND","AUT","BEL","BGR","BIH","BLR","CHE","CYP","CZE","DEU","DNK","ESP","EST","FIN",
     "FRA","GBR","GRC","HRV","HUN","IRL","ISL","ITA","KOS","LIE","LTU","LUX","LVA","MCO","MDA",
     "MKD","MLT","MNE","NLD","NOR","POL","PRT","ROU","SMR","SRB","SVK","SVN","SWE","UKR","VAT"
 ))
 
+# Non-European extras for dashboards
+EXTRAS_ISO3: frozenset[str] = frozenset((
+    "USA","PHL","CHN","KOR","CHE","CHL","JPN","IND","THA","UZB","VNM","RUS","UKR"
+))
+
+# Single source of truth for dashboard countries
+COUNTRIES_ISO3: tuple[str, ...] = tuple(sorted(EUROPE_ISO3 | EXTRAS_ISO3))
+
 # Reliable upstreams for GeoJSON maps (primary + fallback)
 NATURAL_EARTH_URL: str = (
     "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/"
-    "ne_110m_admin_0_countries.geojson"
+    "ne_50m_admin_0_countries.geojson"
 )
 GEOBOUNDARIES_URL: str = (
     "https://www.geoboundaries.org/gbRequest.html?ISO=ALL&ADM=ADM0&format=GeoJSON"

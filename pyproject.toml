@@ -15,7 +15,8 @@ dependencies = [
   "plotly",
   "dash",
   "gunicorn",
-  "python-dotenv"
+  "python-dotenv",
+  "shapely"
 ]
 
 [project.optional-dependencies]
