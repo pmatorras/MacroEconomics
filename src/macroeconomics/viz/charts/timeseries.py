@@ -1,48 +1,13 @@
 import pandas as pd
-import re, os
+import os
 import plotly.express as px
-from macroeconomics.common import FIGURE_DIR, COUNTRIES_ISO3, INDICATORS, DATA_DIR
+from macroeconomics.core.common import FIGURE_DIR, COUNTRIES_ISO3, INDICATORS, DATA_DIR
 from macroeconomics.logging_config import logger
 from pathlib import Path
-
+from macroeconomics.viz.theme import find_latest_files_and_year
 os.makedirs(FIGURE_DIR, exist_ok=True)
 
-def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
-    '''Ensure the input file is the latest IMF information'''
-    data_folder = Path(data_folder)
-    patterns = {
-        "timeseries": r"imf_weo_timeseries_(\d{4})_(april|october)\.csv",
-        "countries": r"imf_weo_countries_(\d{4})_(april|october)\.csv",
-        "indicators": r"imf_weo_indicators_(\d{4})_(april|october)\.csv"
-    }
 
-    latest_files = {}
-    years = {}
-
-    for key, pattern in patterns.items():
-        matched_files = []
-        for file_path in data_folder.iterdir():
-            if file_path.is_file():
-                match = re.match(pattern, file_path.name)
-                if match:
-                    year = match.group(1)
-                    mod_time = file_path.stat().st_mtime
-                    matched_files.append((file_path, mod_time, year))
-        if matched_files:
-            latest_file = max(matched_files, key=lambda x: x[1])
-            latest_files[key] = latest_file[0]
-            years[key] = latest_file[2]
-
-    # Check if years differ between files and send a warning if so
-    unique_years = set(years.values())
-    if len(unique_years) > 1:
-        if prompt_on_mismatch:
-            logger.warning(f"Different data years found in files: {years}")
-            cont = input("Continue with these files? (y/n): ")
-            if cont.lower() != 'y':
-                raise RuntimeError("Execution stopped by user due to mismatched file years.")
-    latest_year = max_year = max(int(y) for y in years.values()) if years else None
-    return latest_files, latest_year
 
 def notInDictionary(codes, dict):
     '''Ensure the country codes are in the dictionary'''

@@ -4,10 +4,11 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 
-from macroeconomics.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
+from macroeconomics.core.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
 from macroeconomics.logging_config import logger
-from macroeconomics.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
-from macroeconomics.maps.europe import clip_to_mainland_europe
+from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
+from macroeconomics.viz.maps.europe import clip_to_mainland_europe
+from macroeconomics.viz.theme import get_shared_data_components
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -30,7 +31,6 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
     geojson = get_geojson()
     fkey = "id"
     continental_geo =  clip_to_mainland_europe(geojson)
-    from .shared_plots import get_shared_data_components
 
     shared_data = get_shared_data_components()
     df = shared_data["time_series"]

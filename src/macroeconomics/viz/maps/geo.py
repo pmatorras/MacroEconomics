@@ -8,8 +8,9 @@ from typing import Iterable, Optional, Tuple, Union
 
 import requests
 
-from macroeconomics.common import EUROPE_ISO3, NATURAL_EARTH_URL, GEOBOUNDARIES_URL, DEFAULT_FEATUREIDKEY, DEFAULT_GEOJSON, ASSETS_DIR
-from macroeconomics.maps.europe import filter_to_europe, clip_to_mainland_europe
+from macroeconomics.core.common import EUROPE_ISO3, NATURAL_EARTH_URL, GEOBOUNDARIES_URL, DEFAULT_FEATUREIDKEY, DEFAULT_GEOJSON, ASSETS_DIR
+from macroeconomics.viz.maps.europe import filter_to_europe, clip_to_mainland_europe
+
 Json = dict
 PathLike = Union[str, Path]
 
@@ -117,7 +118,6 @@ if __name__ == "__main__":
     # assert "FRA" in id_set, f"FRA not found among feature ids"
 
     df = pd.DataFrame({"ISO3": ["DEU", "FRA", "ESP", "ITA", "NOR"], "value": [1.0, 2.0, 3.0, 4.0, 4.0]})
-    from macroeconomics.maps.europe import clip_to_mainland_europe
     continental_geo = clip_to_mainland_europe(geo)
     fig = px.choropleth(
         df,

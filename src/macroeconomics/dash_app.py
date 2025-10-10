@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from macroeconomics.plot import find_latest_files_and_year, makePlotly
-from macroeconomics.common import DATA_DIR, INDICATORS
+from macroeconomics.viz.charts.timeseries import find_latest_files_and_year, makePlotly
+from macroeconomics.core.common import DATA_DIR, INDICATORS
 
 # Load latest files and prepare data
 def _load_latest_data(data_dir):

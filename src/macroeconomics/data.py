@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
 from macroeconomics.logging_config import logger
-from macroeconomics.common import DATA_DIR, COUNTRIES_ISO3, INDICATORS
+from macroeconomics.core.common import DATA_DIR, COUNTRIES_ISO3, INDICATORS
 os.makedirs(DATA_DIR, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"

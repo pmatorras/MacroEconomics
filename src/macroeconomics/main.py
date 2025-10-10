@@ -1,9 +1,9 @@
 import argparse
 from types import SimpleNamespace
 
-from .data import data_main
-from .plot import plot_main 
-from .common import ensure_dirs
+from macroeconomics.data import data_main
+from macroeconomics.viz.charts.timeseries import plot_main 
+from macroeconomics.core.common import ensure_dirs
 
 def cmd_fetch(ns):    
     # Build the args object expected by data_main

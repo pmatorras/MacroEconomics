@@ -5,8 +5,7 @@ from typing import Iterable
 from importlib.resources import files
 
 # Project root directory (repo/src/macroeconomics/common.py -> parents[2] == repo/)
-ROOT_DIR: Path = Path(__file__).resolve().parents[2]
-
+ROOT_DIR: Path = Path(__file__).resolve().parents[3]
 # Standard output directories under project root
 DATA_DIR: Path = ROOT_DIR / "data"
 FIGURE_DIR: Path = ROOT_DIR / "figures"

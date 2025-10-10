@@ -1,6 +1,6 @@
 from shapely.geometry import shape, mapping,box
 
-from macroeconomics.common import EUROPE_ISO3
+from macroeconomics.core.common import EUROPE_ISO3
 from typing import Iterable
 
 Json = dict
