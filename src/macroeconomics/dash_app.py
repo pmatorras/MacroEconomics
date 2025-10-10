@@ -8,38 +8,8 @@ from macroeconomics.viz.charts.timeseries import makePlotly
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 from macroeconomics.core.common import DATA_DIR, INDICATORS
 
-def create_app():
-    data = get_shared_data_components()  # returns a dict
-    df_timeseries = data["time_series"]
-    df_countries = data["countries"]
-    df_indicators = data["df_indicators"]
-    default_indicators = INDICATORS
-    latest_year = data["latest_year"]
-
-    # Optional: sanitize headers/types
-    df_indicators.columns = df_indicators.columns.str.strip()
-    df_indicators["id"] = df_indicators["id"].astype(str)
-
-    df_indicators_fil = df_indicators[df_indicators["id"].isin(default_indicators)]
-    df_countries_fil   = df_countries[df_countries['id'].isin(df_timeseries['country'].unique())]
-    country_dict       = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
-    indicators_dict = pd.Series(
-        df_indicators_fil["label"].values, index=df_indicators_fil["id"]
-    ).to_dict()
-    country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
-    indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
-    # Infer available years from wide timeseries columns that look like integers
-    years = sorted(y for y in df_timeseries["year"].dropna().unique())
-    YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
-    marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
-    default_countries = ["ESP", "FRA"]
-    default_indicator = default_indicators[0]
-    app = Dash(__name__)
-    # Your layout and callbacks...
-    app.server.config.update(
-        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret")
-    )
-    app.layout = html.Div(
+def create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks):
+    return html.Div(
         style={"maxWidth": "1100px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
             html.H2("IMF Macro Dashboard"),
@@ -93,6 +63,72 @@ def create_app():
             dcc.Graph(id="macro-graph", style={"height": "72vh"}),
         ],
     )
+def create_map_layout(indicator_options, default_indicators):
+    """New map tab layout"""
+    return html.Div([
+        html.H3("European Map Visualization"),
+        html.Div(
+            style={"display": "flex", "gap": "12px", "marginBottom": "20px"},
+            children=[
+                html.Div(
+                    style={"minWidth": "320px", "flex": "1"},
+                    children=[
+                        html.Label("Map Indicator"),
+                        dcc.Dropdown(
+                            id="map-indicator",
+                            options=indicator_options,
+                            value=default_indicators[0] if default_indicators else None,
+                            multi=False,
+                            placeholder="Select indicator for map",
+                            clearable=False,
+                        ),
+                    ],
+                ),
+                html.Div(
+                    style={"minWidth": "200px"},
+                    children=[
+                        html.Label("Map Year"),
+                        dcc.Dropdown(
+                            id="map-year",
+                            options=[{"label": str(y), "value": y} for y in range(2000, 2025)],
+                            value=2023,
+                            clearable=False,
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        dcc.Graph(id="europe-map", style={"height": "70vh"}),
+    ])
+
+def create_app():
+    data = get_shared_data_components()  # returns a dict
+    df_timeseries = data["time_series"]
+    df_countries = data["countries"]
+    df_indicators = data["df_indicators"]
+    default_indicators = INDICATORS
+    latest_year = data["latest_year"]
+
+    # Optional: sanitize headers/types
+    df_indicators.columns = df_indicators.columns.str.strip()
+    df_indicators["id"] = df_indicators["id"].astype(str)
+
+    country_dict = data["country_dict"]
+    indicators_dict = data["indicators_dict"]
+    country_options = data["country_options"]
+    indicator_options = data["indicator_options"]
+    # Infer available years from wide timeseries columns that look like integers
+    years = sorted(y for y in df_timeseries["year"].dropna().unique())
+    YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
+    marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
+    default_countries = ["ESP", "FRA"]
+    default_indicator = data["default_indicator"]
+    app = Dash(__name__)
+    # Your layout and callbacks...
+    app.server.config.update(
+        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret")
+    )
+    app.layout = create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks)
 
 
 

@@ -76,7 +76,9 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
 
     df_countries_fil = df_countries[df_countries['id'].isin(country_codes)]
     df_indicators_fil = df_indicators[df_indicators['id'].isin(indicator_codes)]
-
+    # Optional: sanitize headers/types
+    df_indicators.columns = df_indicators.columns.str.strip()
+    df_indicators["id"] = df_indicators["id"].astype(str)
     country_dict = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
     indicators_dict = pd.Series(df_indicators_fil['label'].values, index=df_indicators_fil['id']).to_dict()
     units_dict = pd.Series( df_indicators_fil["unit"].values, index=df_indicators_fil["id"]).to_dict()
@@ -86,8 +88,9 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
 
     # Create the same indicator options as dash_app.py
+    country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
     indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
-    default_indicator = indicator_codes[0]  # Same as dash_app default
+    default_indicator = indicator_codes[0] 
     
     return {
         'time_series': df_timeseries,
@@ -97,6 +100,7 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
         'indicators_dict': indicators_dict,
         'df_indicators': df_indicators_fil,
         'latest_year': latest_year,
+        'country_options':country_options,
         'indicator_options': indicator_options, 
         'default_indicator': default_indicator  
     }
