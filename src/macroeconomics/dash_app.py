@@ -3,37 +3,18 @@ from pathlib import Path
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from macroeconomics.viz.theme import find_latest_files_and_year
+from macroeconomics.viz.theme import get_shared_data_components
 from macroeconomics.viz.charts.timeseries import makePlotly
+from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 from macroeconomics.core.common import DATA_DIR, INDICATORS
 
-# Load latest files and prepare data
-def _load_latest_data(data_dir):
-
-    latest_files, latest_year = find_latest_files_and_year(data_dir, prompt_on_mismatch=False)
-    ts = Path(latest_files["timeseries"])
-    co = Path(latest_files["countries"])
-    ind = Path(latest_files["indicators"])
-
-    # Read CSVs
-    df_timeseries = pd.read_csv(ts)
-    df_countries = pd.read_csv(co)
-    df_indicators = pd.read_csv(ind)
-    return {
-        "year": latest_year,
-        "timeseries": df_timeseries,
-        "countries": df_countries,
-        "indicators": df_indicators,
-    }
-
-
 def create_app():
-    data = _load_latest_data(Path(DATA_DIR))  # returns a dict
-    df_timeseries = data["timeseries"]
+    data = get_shared_data_components()  # returns a dict
+    df_timeseries = data["time_series"]
     df_countries = data["countries"]
-    df_indicators = data["indicators"]
+    df_indicators = data["df_indicators"]
     default_indicators = INDICATORS
-    latest_year = data["year"]
+    latest_year = data["latest_year"]
 
     # Optional: sanitize headers/types
     df_indicators.columns = df_indicators.columns.str.strip()
@@ -136,17 +117,6 @@ def create_app():
             df["country_name"] = df["country"].map(country_dict)
         # Use makePlotly with expected signature
         fig = makePlotly(df, indicator, indicators_dict, df_indicators, latest_year, save_html=False, suffix=None)
-        return fig
-
-        # Call your existing plot helper; adjust the signature to match your makePlotly
-        fig = makePlotly(
-            df=df,
-            indicator=indicator,
-            countries=countries,
-            year_min=y_start,
-            year_max=y_end,
-            save_html=False,
-        )
         return fig
 
     return app
