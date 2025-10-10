@@ -3,6 +3,11 @@ from macroeconomics.logging_config import logger
 import pandas as pd
 import re
 from pathlib import Path
+def notInDictionary(codes, dict):
+    '''Ensure the country codes are in the dictionary'''
+    missing_countries = set(codes) - set(dict.keys())
+    if missing_countries:
+        logger.warning("These country codes are missing from the dictionary:", missing_countries)
 
 
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
@@ -50,47 +55,63 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     
     # Use same file loading
     latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
+    TIMESERIES_FILE = latest_files.get("timeseries")
+    COUNTRIES_FILE = latest_files.get("countries")
+    INDICATORS_FILE = latest_files.get("indicators")
+
+    logger.info(f"Using files from year: {latest_year}")
+    logger.info(f"Timeseries file: {TIMESERIES_FILE}")
+    logger.info(f"Countries file: {COUNTRIES_FILE}")
+    logger.info(f"Indicators file: {INDICATORS_FILE}")
     # Load same dictionaries
     print(latest_files)
-    df = pd.read_csv(latest_files.get("timeseries"))
-
+    #Protect in case the csv gets to be extremely big
+    filtered_chunks = []
+    for chunk in pd.read_csv(TIMESERIES_FILE, chunksize=10000):
+        filtered_chunk = chunk[chunk['country'].isin(country_codes)]
+        filtered_chunks.append(filtered_chunk)
+    df_timeseries = pd.concat(filtered_chunks)
     df_countries = pd.read_csv(latest_files.get("countries"))
-    df_countries_fil = df_countries[df_countries['id'].isin(country_codes)]
-    country_dict = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
-    
     df_indicators = pd.read_csv(latest_files.get("indicators"))
+
+    df_countries_fil = df_countries[df_countries['id'].isin(country_codes)]
     df_indicators_fil = df_indicators[df_indicators['id'].isin(indicator_codes)]
+
+    country_dict = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
     indicators_dict = pd.Series(df_indicators_fil['label'].values, index=df_indicators_fil['id']).to_dict()
-    units_dict = pd.Series(
-        df_indicators_fil["unit"].values,
-        index=df_indicators_fil["id"]
-    ).to_dict()
+    units_dict = pd.Series( df_indicators_fil["unit"].values, index=df_indicators_fil["id"]).to_dict()
+    notInDictionary(country_codes, country_dict)
+    notInDictionary(indicator_codes,indicators_dict)
+
+    df_timeseries['country_name'] = df_timeseries['country'].map(country_dict)
+
     # Create the same indicator options as dash_app.py
     indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
     default_indicator = indicator_codes[0]  # Same as dash_app default
     
     return {
-        'time_series': df,
+        'time_series': df_timeseries,
+        'countries': df_countries_fil,
         'country_dict': country_dict,
         'units_dict': units_dict,
         'indicators_dict': indicators_dict,
-        'df_indicators': df_indicators,
+        'df_indicators': df_indicators_fil,
         'latest_year': latest_year,
         'indicator_options': indicator_options, 
         'default_indicator': default_indicator  
     }
 
-def apply_shared_title_style(fig, indicator, indicators_dict):
+def shared_title_style(fig, indicator, indicators_dict):
     """Apply the same title formatting as makePlotly"""
     fig.update_layout(
         title=dict(text=''),  # Clear default title
         annotations=[dict(
-            text=indicator,
+            text=indicators_dict[indicator],
             x=0.5, y=1.01,
             xref='paper', yref='paper',
             showarrow=False,
             font=dict(size=26),
-            xanchor='center', yanchor='bottom'
-        )]
+            xanchor='center',
+            yanchor='bottom')]
     )
     return fig

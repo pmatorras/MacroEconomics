@@ -8,7 +8,7 @@ from macroeconomics.core.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe
-from macroeconomics.viz.theme import get_shared_data_components
+from macroeconomics.viz.theme import get_shared_data_components,shared_title_style
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -21,13 +21,23 @@ def load_tidy(path: Path) -> pd.DataFrame:
     df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
     return df
 
+def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
+    # naive wrap: break at the last space before width
+    label = name.strip()
+    if len(label) > width and " " in label:
+        i = label.rfind(" ", 0, width)
+        if i != -1:
+            label = label[:i] + "<br>" + label[i+1:]
+    if unit:
+        label += f"<br>({unit})"
+    return label
+
 def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
     """
 
-    
     geojson = get_geojson()
     fkey = "id"
     continental_geo =  clip_to_mainland_europe(geojson)
@@ -48,11 +58,31 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
 
     init_indicator = shared_data['default_indicator']
     init_unit = units_dict[init_indicator]
-    print(init_indicator)
+
+    # Year buttons
+    buttons_year = []
+    button_year_x = 0.0
+    button_indicator_x = 0.15
+    for yr in years:
+        buttons_year.append(dict(
+            label=str(yr),
+            method="update",
+            args=[
+                {"z": [df.loc[
+                    (df.indicator==init_indicator)&(df.year==yr),
+                    "value"
+                ].tolist()]},
+                {"annotations": [dict(
+                    text=f"{shared_data['indicators_dict'][init_indicator]} ({yr})",
+                    x=button_year_x, y=1.01, xref="paper", yref="paper",
+                    showarrow=False, font=dict(size=26),
+                    xanchor="center", yanchor="bottom"
+                )]}
+            ]
+        ))
     # Create indicators button:
     buttons_indicator = []
     for option in shared_data["indicator_options"]:
-        print(option, units_dict.get(option["value"], ""))
         iid = option["value"]
         label = option["label"]
         unit = units_dict.get(iid, "")
@@ -67,36 +97,17 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
                 {
                     "annotations": [dict(
                         text=label,
-                        x=0.5, y=1.01,
+                        x=button_indicator_x, y=1.01,
                         xref="paper", yref="paper",
                         showarrow=False,
                         font=dict(size=26),
                         xanchor="center", yanchor="bottom"
                     )],
-                    "coloraxis.colorbar.title.text": unit
+                    "coloraxis.colorbar.title.text": wrap_title(unit)
                 }
             ]
         ))
-    # Year buttons
-    buttons_year = []
-    for yr in years:
-        buttons_year.append(dict(
-            label=str(yr),
-            method="update",
-            args=[
-                {"z": [df.loc[
-                    (df.indicator==init_indicator)&(df.year==yr),
-                    "value"
-                ].tolist()]},
-                {"annotations": [dict(
-                    text=f"{shared_data['indicators_dict'][init_indicator]} ({yr})",
-                    x=0.5, y=1.01, xref="paper", yref="paper",
-                    showarrow=False, font=dict(size=26),
-                    xanchor="center", yanchor="bottom"
-                )]}
-            ]
-        ))
-    
+
     fig = px.choropleth(
         df.query("indicator == @init_indicator and year == @init_year"),
         geojson=continental_geo,
@@ -105,17 +116,15 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
         color="value",
         projection="mercator",
         color_continuous_scale="Viridis",
+        custom_data=["country_name", "value"],  # carry readable name
+
     )
     fig.update_geos(fitbounds="locations", visible=False)
-    # After fig = px.choropleth(...)
-    initial_annotation = dict(
-        text=f"{shared_data['indicators_dict'][init_indicator]} ({init_year})",
-        x=0.5, y=1.01, xref="paper", yref="paper",
-        showarrow=False, font=dict(size=26),
-        xanchor="center", yanchor="bottom"
+    fig.update_traces(
+        hovertemplate="%{customdata[0]}<br>Value=%{customdata[1]:,.2f}<extra></extra>"
     )
-    
-    fig.update_layout(annotations=[initial_annotation])
+    shared_title_style(fig, init_indicator, shared_data['indicators_dict'])
+
     fig.update_layout(
         coloraxis_colorbar=dict(
             title=init_unit,
@@ -127,7 +136,7 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
     )
     # Layout: figure size & colorbar
     fig.update_layout(
-        margin=dict(l=20, r=100, t=80, b=20),  # More space for colorbar on right
+        margin=dict(l=20, r=100, t=80, b=20), 
         coloraxis_colorbar=dict(
             thickness=15,
             len=0.8,
@@ -138,13 +147,13 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
             dict(
                 buttons=buttons_indicator,
                 direction="down", showactive=True,
-                x=0.0, xanchor="left", y=1.02, yanchor="top",
+                x=button_indicator_x, xanchor="left", y=1.02, yanchor="top",
                 pad={"r":10, "t":10}
             ),
             dict(
                 buttons=buttons_year,
                 direction="down", showactive=True,
-                x=0.5, xanchor="left", y=1.02, yanchor="top",
+                x=button_year_x, xanchor="left", y=1.02, yanchor="top",
                 pad={"r":10, "t":10},
                 active=initial_idx
 
