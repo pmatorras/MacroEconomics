@@ -5,7 +5,6 @@ from datetime import datetime
 from urllib.parse import quote
 from macroeconomics.logging_config import logger
 from macroeconomics.core.common import DATA_DIR, COUNTRIES_ISO3, INDICATORS
-os.makedirs(DATA_DIR, exist_ok=True)
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
 def get_selected_indicators(args, valid_set):
@@ -145,7 +144,6 @@ def data_main(args):
     y = datetime.now().year
     years = list(range(1990, y + 6))
 
-    print(type(chosen_indicators))
     logger.info(f"Chosen indicators: {chosen_indicators}")
     frames = []
     for ind in selected_indicators:

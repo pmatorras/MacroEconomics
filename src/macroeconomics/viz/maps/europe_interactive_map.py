@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
+
 
 from macroeconomics.core.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
 from macroeconomics.logging_config import logger
@@ -32,7 +34,7 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
+def make_europe_map(args):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
@@ -53,7 +55,7 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
     country_dict = shared_data["country_dict"]
     units_dict = shared_data['units_dict']
     years = sorted(df["year"].dropna().unique())
-    init_year = 2025
+    init_year = datetime.now().year
     initial_idx = years.index(init_year)
 
     init_indicator = shared_data['default_indicator']
@@ -162,16 +164,7 @@ def make_europe_map_interactive(csv_path: Path, outfile: Path | None = None):
     )
 
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-    outfile = outfile or (FIGURE_DIR / "europe_interactive_map.html")
+    outfile = FIGURE_DIR / "europe_interactive_map.html"
     fig.write_html(outfile, include_plotlyjs="cdn")
     logger.info(f"Wrote {outfile}")
-    return fig, outfile
-
-if __name__ == "__main__":
-    # Default to the latest tidy CSV produced by data.py
-    # Adjust the filename/tag to your actual output
-    candidates = sorted(DATA_DIR.glob("imf_weo_timeseries_*.csv"))
-    if not candidates:
-        raise SystemExit("No tidy WEO CSVs found in data/. Run the data pipeline first.")
-    csv = candidates[-1]
-    make_europe_map_interactive(csv)
+    #return fig, outfile

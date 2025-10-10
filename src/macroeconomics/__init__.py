@@ -14,13 +14,18 @@ from macroeconomics.core.common import ensure_dirs
 # Ensure directories exist when package is imported
 ensure_dirs()
 # Import main functions for easy access
-from macroeconomics.data import data_main
+from macroeconomics.logging_config import setup_logging
+from macroeconomics.datasets.data import data_main
 from macroeconomics.viz.charts.timeseries import plot_main  
+from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 #from .dash_app import main as dash_main
 
 # Define what gets imported with "from macroeconomics import *"
 __all__ = [
+    '__version__'
+    'setup_logging'
     'data_main',
     'plot_main', 
+    'make_europe_map'
 ]
 
