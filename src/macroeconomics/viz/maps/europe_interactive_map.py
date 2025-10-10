@@ -34,7 +34,7 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map(args):
+def make_europe_map(save_html=True):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
@@ -163,8 +163,11 @@ def make_europe_map(args):
         ]
     )
 
-    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-    outfile = FIGURE_DIR / "europe_interactive_map.html"
-    fig.write_html(outfile, include_plotlyjs="cdn")
-    logger.info(f"Wrote {outfile}")
-    #return fig, outfile
+    if save_html:
+        outfile = FIGURE_DIR / "europe_interactive_map.html"
+        fig.write_html(outfile, include_plotlyjs="cdn")
+        logger.info(f"Wrote {outfile}")
+        return fig
+    else:
+        logger.info(f"Omitting save to html")
+        return fig
