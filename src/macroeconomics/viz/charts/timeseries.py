@@ -7,7 +7,7 @@ from macroeconomics.viz.theme import get_shared_data_components,shared_title_sty
 
 
 
-def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year, save_html=True, suffix=None):
+def makePlotly(df_input, indicator, indicators_dict, unit_suffix_dict, df_indicators, latest_year, save_html=True, suffix=None):
     '''Make an automatised plot using plotly given the df and the variable to plot. Uses IMF data'''
     df= df_input[df_input["indicator"]==indicator]
     df = df.copy()
@@ -21,8 +21,11 @@ def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year,
     df = df.sort_values(['country_name', 'year']).reset_index(drop=True)
 
     units = df_indicators.loc[df_indicators['id'] == indicator, 'unit'].iloc[0]
-    fig = px.line(df, x='year', y='value', color='country_name', line_dash='line_style',
-            labels={'value': units, 'year': 'Year', 'country': 'Country'})
+    fig = px.line(df, x='year', y='value', color='country_name',
+                  line_dash='line_style',
+                  labels={'value': units, 'year': 'Year', 'country': 'Country'},
+                  custom_data=["country_name", "value"]
+                )
     # Cleanup legend: one entry per country that controls both solid & dashed
     legend_shown_countries = set()
     for trace in fig.data:
@@ -37,6 +40,13 @@ def makePlotly(df_input, indicator, indicators_dict, df_indicators, latest_year,
         else:
             trace.showlegend = False
     fig = shared_title_style(fig, indicator, indicators_dict)
+    unit_label = unit_suffix_dict[indicator]
+    hover = (
+        "%{customdata[0]}<br>"
+        f"%{{customdata[1]:.2f}}{unit_label}<extra></extra>"
+    )
+    fig.update_traces(hovertemplate=hover)
+
     fig.update_layout(
         xaxis=dict(
             title_font=dict(size=16, family='Arial', color='black', weight='bold'),
@@ -73,9 +83,8 @@ def plot_main(args):
 
     df_indicators_fil = shared_data["df_indicators"]
     indicators_dict = shared_data["indicators_dict"]
-
-
+    unit_suffix_dict = shared_data["suffix"]
     country_suffix='_all' if country_codes is COUNTRIES_ISO3 else f"_{'_'.join(country_dict.keys())}"
 
     for indicator in indicators_dict.keys():
-        makePlotly(df_timeseries, indicator,indicators_dict, df_indicators_fil, latest_year, save_html=True, suffix=country_suffix)
+        makePlotly(df_timeseries, indicator,indicators_dict, unit_suffix_dict,  df_indicators_fil, latest_year, save_html=True, suffix=country_suffix)

@@ -9,7 +9,20 @@ def notInDictionary(codes, dict):
     if missing_countries:
         logger.warning("These country codes are missing from the dictionary:", missing_countries)
 
-
+def get_suffix(units_dict):
+    suffix_dict = {}
+    for key in units_dict:
+        suffix = ''
+        if 'percent' in units_dict[key].lower():
+            suffix = '%'
+        elif 'billion' in units_dict[key].lower():
+            suffix = ' billions'
+        elif 'million' in units_dict[key].lower():
+            suffix = ' millions'
+        if 'dollars' in units_dict[key].lower():
+            suffix = ' USD' + suffix
+        suffix_dict[key] = suffix
+    return suffix_dict
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
     '''Ensure the input file is the latest IMF information'''
     data_folder = Path(data_folder)
@@ -63,8 +76,7 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     logger.info(f"Timeseries file: {TIMESERIES_FILE}")
     logger.info(f"Countries file: {COUNTRIES_FILE}")
     logger.info(f"Indicators file: {INDICATORS_FILE}")
-    # Load same dictionaries
-    print(latest_files)
+
     #Protect in case the csv gets to be extremely big
     filtered_chunks = []
     for chunk in pd.read_csv(TIMESERIES_FILE, chunksize=10000):
@@ -91,7 +103,7 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
     indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
     default_indicator = indicator_codes[0] 
-    
+    suffix = get_suffix(units_dict)
     return {
         'time_series': df_timeseries,
         'countries': df_countries_fil,
@@ -102,7 +114,9 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
         'latest_year': latest_year,
         'country_options':country_options,
         'indicator_options': indicator_options, 
-        'default_indicator': default_indicator  
+        'default_indicator': default_indicator, 
+        'suffix': suffix  
+
     }
 
 def shared_title_style(fig, indicator, indicators_dict):

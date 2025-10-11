@@ -5,8 +5,12 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 ### Features 
 
 - Data fetch: downloads country, indicator metadata, and timeseries from the IMF Datamapper API and writes versioned CSVs into the data folder with a release tag inferred from date logic.
-- Plotting: creates per‑indicator Plotly HTML charts for selected countries, with a dashed/solid style boundary at the latest projection year and a clean legend treatment.
-- Dashboard: Dash app with country and indicator dropdowns plus a year range slider, rendering the same plot logic interactively via a registered callback.
+- Plotting: 
+    - creates per‑indicator Plotly HTML charts for selected countries, with a dashed/solid style boundary at the latest projection year and a clean legend treatment.
+    - Interactive european maps for each chosen indicator and year
+- Dashboard: Dash app with two tabs:
+    1.  One with country and indicator dropdowns plus a year range slider, rendering the same plot logic interactively via a registered callback.
+    1. One representing the interactive map of europe, with options to chose from a range of indicators, and years. 
 
 ## Table of Contents
 - [Project structure](#project-structure)
@@ -21,13 +25,34 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 
 ## Project structure
 
-- `common.py`: central paths and defaults, including DATA_DIR, FIGURE_DIR, chosen_indicators, countries_iso3, and an ensure_dirs() helper for directory creation.
-- `data.py`: IMF API helpers and data_main(args) to fetch metadata and timeseries, deduplicate/validate rows, and write CSV outputs with a computed release tag.
-- `plot.py`: utilities to resolve the latest CSV triplet, validate requested codes, and plot indicators with makePlotly; plot_main(args) orchestrates reading, filtering, and writing HTML charts.
-- `dash_app.py`: builds the Dash app, prepares in‑memory frames and metadata, registers update_graph as the callback, and exposes main(debug, host, port) to run the server.
-- `main.py`: CLI dispatcher with subcommands to fetch, plot, and run the Dash app by delegating into data_main, plot_main, and dash_app respectively.
-- `logging_config.py`: stores the output information into log files
-- `wsgi.py`: creates an app for the web render to work with.
+The project structure is as follows:
+```
+macroeconomics/
+├── core/
+│ └── common.py # Central paths, defaults, and directory helpers
+├── datasets/
+│ └── data.py # IMF API integration and CSV generation
+├── viz/
+│ ├── theme.py # Shared styling, data loading, and theming utilities
+│ ├── charts/
+│ │ └── timeseries.py # makePlotly: time series chart logic
+│ └── maps/
+│ ├── geo.py # GeoJSON loading and utility functions
+│ ├── europe.py # Mainland Europe clipping and processing
+│ └── europe_interactive_map.py
+│ # make_europe_map: standalone Plotly & Dash-compatible maps
+├── logging_config.py # Logging setup for CLI and app
+├── main.py # CLI entry point: fetch, plot, dash subcommands
+├── dash_app.py # Dash application: multi-tab layout (Time Series, Map)
+└── wsgi.py # WSGI server entry for deployment
+````
+### Key Components
+
+- **`core/common.py`**: Central configuration including `DATA_DIR`, `FIGURE_DIR`, default indicators, and path management utilities
+- **`dataset/data.py`**: IMF API helpers, data validation, deduplication, and CSV output with computed release tags
+- **`viz/theme.py`**: Shared data loading, styling utilities, and consistent theming across visualizations
+- **`dash_app.py`**: Multi-tab application featuring interactive time series charts and European choropleth maps
+- **`main.py`**: CLI dispatcher with subcommands to fetch, plot, and run the Dash app
 
 
 ## Setup
@@ -77,14 +102,17 @@ This key is used by the Dash/Flask server for session signing. It must be non-em
 ### Commands
 
 - Fetch IMF data:
-python -m macroeconomics fetch --indicators NGDPD,PCPIEPCH --countries ESP,FRA,DEU.
-    - Writes imf_weo_countries_{tag}.csv, imf_weo_indicators_{tag}.csv, and imf_weo_timeseries_{tag}[suffix].csv to DATA_DIR based on latest_weo_release_tag.
-- Generate plots:
-python -m macroeconomics plot --countries ESP,FRA,DEU.
-    - Reads the latest CSVs, filters by countries, and writes one HTML per indicator to FIGURE_DIR with “plot_{indicator}{suffix}.html”.
+`python -m macroeconomics fetch --indicators NGDPD,PCPIEPCH --countries ESP,FRA,DEU`.
+    - Writes imf_weo_countries_{tag}.csv, imf_weo_indicators_{tag}.csv, and imf_weo_timeseries_{tag}[suffix].csv to `DATA_DIR` based on latest_weo_release_tag.
+- Generate time series:
+`python -m macroeconomics plot --countries ESP,FRA,DEU`.
+    - Reads the latest CSVs, filters by countries, and writes one HTML per indicator to `FIGURE_DIR` with “plot_{indicator}{suffix}.html”.
+- Generate interactive maps:
+`python -m macroeconomics map`
+    - Reads the latest CSVs, generates one interactive european map where the indicator and the year can be chosen. It is saved into to `FIGURE_DIR` with “plot_{indicator}{suffix}.html”.
 - Launch dashboard:
-python -m macroeconomics dash --host 127.0.0.1 --port 8050 --debug.
-    - Starts a Dash app that loads the latest files, offers country/indicator selection and a year range slider, and renders the figure via update_graph.
+`python -m macroeconomics dash --host 127.0.0.1 --port 8050 --debug`.
+    - Starts a Dash app that loads the latest files, with two tabs. One offers country/indicator selection and a year range slider, and renders the figure via update_graph. The other the interactive european map.
 
 
 ### Data outputs
