@@ -34,7 +34,7 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map(save_html=True):
+def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
@@ -55,60 +55,20 @@ def make_europe_map(save_html=True):
     country_dict = shared_data["country_dict"]
     units_dict = shared_data['units_dict']
     years = sorted(df["year"].dropna().unique())
-    init_year = datetime.now().year
+
+
+    # Use custom values if provided (for Dash integration)
+    if custom_indicator is not None and custom_year is not None:
+        init_indicator = custom_indicator
+        init_year = custom_year
+    else:
+        # Use defaults for standalone version
+        init_indicator = shared_data['default_indicator']
+        init_year = datetime.now().year
+
+    init_unit = units_dict[init_indicator]
     initial_idx = years.index(init_year)
 
-    init_indicator = shared_data['default_indicator']
-    init_unit = units_dict[init_indicator]
-
-    # Year buttons
-    buttons_year = []
-    button_year_x = 0.0
-    button_indicator_x = 0.15
-    for yr in years:
-        buttons_year.append(dict(
-            label=str(yr),
-            method="update",
-            args=[
-                {"z": [df.loc[
-                    (df.indicator==init_indicator)&(df.year==yr),
-                    "value"
-                ].tolist()]},
-                {"annotations": [dict(
-                    text=f"{shared_data['indicators_dict'][init_indicator]} ({yr})",
-                    x=button_year_x, y=1.01, xref="paper", yref="paper",
-                    showarrow=False, font=dict(size=26),
-                    xanchor="center", yanchor="bottom"
-                )]}
-            ]
-        ))
-    # Create indicators button:
-    buttons_indicator = []
-    for option in shared_data["indicator_options"]:
-        iid = option["value"]
-        label = option["label"]
-        unit = units_dict.get(iid, "")
-        buttons_indicator.append(dict(
-            label=label,
-            method="update",
-            args=[
-                # Update the map's data
-                {"z": [ df.loc[(df["indicator"] == iid) & (df["year"] == init_year), "value"].tolist() ]},
-                # Update layout: title annotation stays indicator label,
-                # colorbar title uses unit
-                {
-                    "annotations": [dict(
-                        text=label,
-                        x=button_indicator_x, y=1.01,
-                        xref="paper", yref="paper",
-                        showarrow=False,
-                        font=dict(size=26),
-                        xanchor="center", yanchor="bottom"
-                    )],
-                    "coloraxis.colorbar.title.text": wrap_title(unit)
-                }
-            ]
-        ))
 
     fig = px.choropleth(
         df.query("indicator == @init_indicator and year == @init_year"),
@@ -128,6 +88,7 @@ def make_europe_map(save_html=True):
     shared_title_style(fig, init_indicator, shared_data['indicators_dict'])
 
     fig.update_layout(
+        margin=dict(l=20, r=100, t=80, b=20), 
         coloraxis_colorbar=dict(
             title=init_unit,
             thickness=15,
@@ -137,31 +98,72 @@ def make_europe_map(save_html=True):
         )
     )
     # Layout: figure size & colorbar
-    fig.update_layout(
-        margin=dict(l=20, r=100, t=80, b=20), 
-        coloraxis_colorbar=dict(
-            thickness=15,
-            len=0.8,
-            x=1.01,
-            xanchor="left"
-        ),
-        updatemenus=[
-            dict(
-                buttons=buttons_indicator,
-                direction="down", showactive=True,
-                x=button_indicator_x, xanchor="left", y=1.02, yanchor="top",
-                pad={"r":10, "t":10}
-            ),
-            dict(
-                buttons=buttons_year,
-                direction="down", showactive=True,
-                x=button_year_x, xanchor="left", y=1.02, yanchor="top",
-                pad={"r":10, "t":10},
-                active=initial_idx
+    if do_buttons:
+        buttons_year = []
+        button_year_x = 0.0
+        button_indicator_x = 0.15
+        for yr in years:
+            buttons_year.append(dict(
+                label=str(yr),
+                method="update",
+                args=[
+                    {"z": [df.loc[
+                        (df.indicator==init_indicator)&(df.year==yr),
+                        "value"
+                    ].tolist()]},
+                    {"annotations": [dict(
+                        text=f"{shared_data['indicators_dict'][init_indicator]} ({yr})",
+                        x=button_year_x, y=1.01, xref="paper", yref="paper",
+                        showarrow=False, font=dict(size=26),
+                        xanchor="center", yanchor="bottom"
+                    )]}
+                ]
+            ))
+        # Create indicators button:
+        buttons_indicator = []
+        for option in shared_data["indicator_options"]:
+            iid = option["value"]
+            label = option["label"]
+            unit = units_dict.get(iid, "")
+            buttons_indicator.append(dict(
+                label=label,
+                method="update",
+                args=[
+                    # Update the map's data
+                    {"z": [ df.loc[(df["indicator"] == iid) & (df["year"] == init_year), "value"].tolist() ]},
+                    # Update layout: title annotation stays indicator label,
+                    # colorbar title uses unit
+                    {
+                        "annotations": [dict(
+                            text=label,
+                            x=button_indicator_x, y=1.01,
+                            xref="paper", yref="paper",
+                            showarrow=False,
+                            font=dict(size=26),
+                            xanchor="center", yanchor="bottom"
+                        )],
+                        "coloraxis.colorbar.title.text": wrap_title(unit)
+                    }
+                ]
+            ))
+        fig.update_layout(
+            updatemenus=[
+                dict(
+                    buttons=buttons_indicator,
+                    direction="down", showactive=True,
+                    x=button_indicator_x, xanchor="left", y=1.02, yanchor="top",
+                    pad={"r":10, "t":10}
+                ),
+                dict(
+                    buttons=buttons_year,
+                    direction="down", showactive=True,
+                    x=button_year_x, xanchor="left", y=1.02, yanchor="top",
+                    pad={"r":10, "t":10},
+                    active=initial_idx
 
-            ),
-        ]
-    )
+                ),
+            ]
+        )
 
     if save_html:
         outfile = FIGURE_DIR / "europe_interactive_map.html"

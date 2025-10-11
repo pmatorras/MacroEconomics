@@ -20,12 +20,13 @@ INDICATORS: tuple[str, ...] = (
 EUROPE_ISO3: frozenset[str] = frozenset((
     "ALB","AND","AUT","BEL","BGR","BIH","BLR","CHE","CYP","CZE","DEU","DNK","ESP","EST","FIN",
     "FRA","GBR","GRC","HRV","HUN","IRL","ISL","ITA","KOS","LIE","LTU","LUX","LVA","MCO","MDA",
-    "MKD","MLT","MNE","NLD","NOR","POL","PRT","ROU","SMR","SRB","SVK","SVN","SWE","UKR","VAT"
+    "MKD","MLT","MNE","NLD","NOR","POL","PRT","ROU", "RUS","SMR","SRB","SVK","SVN","SWE","TUR",
+    "UKR","VAT"
 ))
 
 # Non-European extras for dashboards
 EXTRAS_ISO3: frozenset[str] = frozenset((
-    "USA","PHL","CHN","KOR","CHE","CHL","JPN","IND","THA","UZB","VNM","RUS","UKR"
+    "USA","PHL","CHN","KOR","CHE","CHL","JPN","IND","THA","UZB","VNM",
 ))
 
 # Single source of truth for dashboard countries

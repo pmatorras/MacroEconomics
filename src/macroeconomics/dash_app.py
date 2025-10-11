@@ -7,6 +7,7 @@ from macroeconomics.viz.theme import get_shared_data_components
 from macroeconomics.viz.charts.timeseries import makePlotly
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 from macroeconomics.core.common import DATA_DIR, INDICATORS
+from macroeconomics.logging_config import logger
 
 def create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks):
     return html.Div(
@@ -187,7 +188,7 @@ def create_app():
         Input("map-year", "value"),
     )
     def update_map(indicator, year):
-        print(f"DEBUG: indicator={indicator}, year={year}")
+        logger.debug(f"DEBUG: indicator={indicator}, year={year}")
 
         if not indicator:
             return {}
@@ -199,6 +200,9 @@ def create_app():
         ].copy()
         
         # Call your existing map function with filtered data
-        fig = make_europe_map()
+        fig = make_europe_map(save_html=False,
+                              do_buttons=False,        
+                              custom_indicator=indicator,
+                              custom_year=year)
         return fig
     return app
