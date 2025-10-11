@@ -3,17 +3,15 @@ import requests
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote
-from .logging_config import logger
-from .common import DATA_DIR, countries_iso3, chosen_indicators
-os.makedirs(DATA_DIR, exist_ok=True)
+from macroeconomics.logging_config import logger
+from macroeconomics.core.common import DATA_DIR, COUNTRIES_ISO3, INDICATORS
 
 BASE = "https://www.imf.org/external/datamapper/api/v1/"
 def get_selected_indicators(args, valid_set):
-    from macroeconomics import common
     if getattr(args, "indicators", None):
         return args.indicators.split(",")
     else:
-        return [i for i in common.chosen_indicators if i in valid_set]
+        return [i for i in INDICATORS if i in valid_set]
     
 def latest_weo_release_tag(today=None):
     if today is None:
@@ -140,13 +138,12 @@ def data_main(args):
         logger.error("No valid indicators selected; exiting.")
         return
 
-    country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(countries_iso3), "id"].astype(str).tolist()
+    country_codes = args.countries.split(",") if args.countries else countries.loc[countries["id"].isin(COUNTRIES_ISO3), "id"].astype(str).tolist()
     
     # Years: last 15 + next 5 (WEO projections)
     y = datetime.now().year
     years = list(range(1990, y + 6))
 
-    print(type(chosen_indicators))
     logger.info(f"Chosen indicators: {chosen_indicators}")
     frames = []
     for ind in selected_indicators:

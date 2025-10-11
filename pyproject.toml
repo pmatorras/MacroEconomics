@@ -14,11 +14,13 @@ dependencies = [
   "pandas",
   "plotly",
   "dash",
-  "python-dotenv"
+  "gunicorn",
+  "python-dotenv",
+  "shapely"
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "jupyter"]
+dev = ["pytest"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

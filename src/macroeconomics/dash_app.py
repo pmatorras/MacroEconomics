@@ -3,61 +3,14 @@ from pathlib import Path
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from .plot import find_latest_files_and_year, makePlotly
-from .common import DATA_DIR, chosen_indicators
+from macroeconomics.viz.theme import get_shared_data_components
+from macroeconomics.viz.charts.timeseries import makePlotly
+from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
+from macroeconomics.core.common import DATA_DIR, INDICATORS
+from macroeconomics.logging_config import logger
 
-# Load latest files and prepare data
-def _load_latest_data(data_dir):
-
-    latest_files, latest_year = find_latest_files_and_year(data_dir, prompt_on_mismatch=False)
-    ts = Path(latest_files["timeseries"])
-    co = Path(latest_files["countries"])
-    ind = Path(latest_files["indicators"])
-
-    # Read CSVs
-    df_timeseries = pd.read_csv(ts)
-    df_countries = pd.read_csv(co)
-    df_indicators = pd.read_csv(ind)
-    return {
-        "year": latest_year,
-        "timeseries": df_timeseries,
-        "countries": df_countries,
-        "indicators": df_indicators,
-    }
-
-
-def create_app():
-    data = _load_latest_data(Path(DATA_DIR))  # returns a dict
-    df_timeseries = data["timeseries"]
-    df_countries = data["countries"]
-    df_indicators = data["indicators"]
-    default_indicators = chosen_indicators
-    latest_year = data["year"]
-
-    # Optional: sanitize headers/types
-    df_indicators.columns = df_indicators.columns.str.strip()
-    df_indicators["id"] = df_indicators["id"].astype(str)
-
-    df_indicators_fil = df_indicators[df_indicators["id"].isin(chosen_indicators)]
-    df_countries_fil   = df_countries[df_countries['id'].isin(df_timeseries['country'].unique())]
-    country_dict       = pd.Series(df_countries_fil['label'].values, index=df_countries_fil['id']).to_dict()
-    indicators_dict = pd.Series(
-        df_indicators_fil["label"].values, index=df_indicators_fil["id"]
-    ).to_dict()
-    country_options = [{"label": country_dict.get(cid, cid), "value": cid} for cid in sorted(country_dict)]
-    indicator_options = [{"label": indicators_dict.get(iid, iid), "value": iid} for iid in sorted(indicators_dict)]
-    # Infer available years from wide timeseries columns that look like integers
-    years = sorted(y for y in df_timeseries["year"].dropna().unique())
-    YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
-    marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
-    default_countries = ["ESP", "FRA"]
-    default_indicator = chosen_indicators[0]
-    app = Dash(__name__)
-    # Your layout and callbacks...
-    app.server.config.update(
-        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret")
-    )
-    app.layout = html.Div(
+def create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks):
+    return html.Div(
         style={"maxWidth": "1100px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
             html.H2("IMF Macro Dashboard"),
@@ -111,9 +64,99 @@ def create_app():
             dcc.Graph(id="macro-graph", style={"height": "72vh"}),
         ],
     )
+def create_map_layout(indicator_options, default_indicators):
+    """New map tab layout"""
+    return html.Div([
+        html.H3("European Map Visualization"),
+        html.Div(
+            style={"display": "flex", "gap": "12px", "marginBottom": "20px"},
+            children=[
+                html.Div(
+                    style={"minWidth": "320px", "flex": "1"},
+                    children=[
+                        html.Label("Map Indicator"),
+                        dcc.Dropdown(
+                            id="map-indicator",
+                            options=indicator_options,
+                            value=default_indicators[0] if default_indicators else None,
+                            multi=False,
+                            placeholder="Select indicator for map",
+                            clearable=False,
+                        ),
+                    ],
+                ),
+                html.Div(
+                    style={"minWidth": "200px"},
+                    children=[
+                        html.Label("Map Year"),
+                        dcc.Dropdown(
+                            id="map-year",
+                            options=[{"label": str(y), "value": y} for y in range(2000, 2025)],
+                            value=2023,
+                            clearable=False,
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        dcc.Graph(id="europe-map", style={"height": "70vh"}),
+    ])
 
+def create_app():
+    data = get_shared_data_components()  # returns a dict
+    df_timeseries = data["time_series"]
+    df_countries = data["countries"]
+    df_indicators = data["df_indicators"]
+    default_indicators = INDICATORS
+    latest_year = data["latest_year"]
+    country_dict = data["country_dict"]
+    indicators_dict = data["indicators_dict"]
+    country_options = data["country_options"]
+    indicator_options = data["indicator_options"]
+    unit_suffix_dict = data["suffix"]
+    # Infer available years from wide timeseries columns that look like integers
+    years = sorted(y for y in df_timeseries["year"].dropna().unique())
+    YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
+    marks = {y: str(y) for y in range(YEAR_MIN, YEAR_MAX + 1, 5)}
+    default_countries = ["ESP", "FRA"]
+    default_indicator = data["default_indicator"]
+    app = Dash(__name__)
+    # Your layout and callbacks...
+    app.server.config.update(
+        SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret")
+    )
+    app.layout = html.Div(
+        style={"maxWidth": "1200px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
+        children=[
+            html.H2("IMF Macro Dashboard"),
+            
+            # Tab selector
+            dcc.Tabs(id="main-tabs", value="tab-timeseries", children=[
+                dcc.Tab(label="Time Series", value="tab-timeseries"),
+                dcc.Tab(label="European Map", value="tab-map"),
+            ]),
+            
+            # Tab content
+            html.Div(id="tab-content"),
+        ]
+    )
 
+    # Tab switching callback
+    @app.callback(
+        Output("tab-content", "children"),
+        Input("main-tabs", "value")
+    )
 
+    #render the two tab options
+    def render_tab_content(active_tab):
+        if active_tab == "tab-timeseries":
+            return create_timeseries_layout(
+                country_options, indicator_options, default_countries, 
+                default_indicators, YEAR_MIN, YEAR_MAX, marks
+            )
+        elif active_tab == "tab-map":
+            return create_map_layout(indicator_options, default_indicators)
+    #timeseries callback
     @app.callback(
         Output("macro-graph", "figure"),
         Input("countries", "value"),
@@ -123,6 +166,8 @@ def create_app():
     )
 
     def update_graph(countries, indicator, year_range):
+        if not countries or not indicator or not year_range:
+            return {}
         y0, y1 = int(year_range[0]), int(year_range[1])
         # Filter tidy data
         df = df_timeseries[
@@ -134,18 +179,31 @@ def create_app():
         if "country_name" not in df.columns:
             df["country_name"] = df["country"].map(country_dict)
         # Use makePlotly with expected signature
-        fig = makePlotly(df, indicator, indicators_dict, df_indicators, latest_year, save_html=False, suffix=None)
+        fig = makePlotly(df, indicator, indicators_dict, unit_suffix_dict, df_indicators, latest_year, save_html=False, suffix=None)
         return fig
 
-        # Call your existing plot helper; adjust the signature to match your makePlotly
-        fig = makePlotly(
-            df=df,
-            indicator=indicator,
-            countries=countries,
-            year_min=y_start,
-            year_max=y_end,
-            save_html=False,
-        )
-        return fig
+    # Map callback
+    @app.callback(
+        Output("europe-map", "figure"),
+        Input("map-indicator", "value"),
+        Input("map-year", "value"),
+    )
+    def update_map(indicator, year):
+        logger.debug(f"DEBUG: indicator={indicator}, year={year}")
 
+        if not indicator:
+            return {}
+        
+        # Filter data for the specific year and indicator for map
+        map_data = df_timeseries[
+            (df_timeseries["indicator"] == indicator) &
+            (df_timeseries["year"] == year)
+        ].copy()
+        
+        # Call your existing map function with filtered data
+        fig = make_europe_map(save_html=False,
+                              do_buttons=False,        
+                              custom_indicator=indicator,
+                              custom_year=year)
+        return fig
     return app

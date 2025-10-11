@@ -1,10 +1,9 @@
 import argparse
 from types import SimpleNamespace
 
-from .data import data_main
-from .plot import plot_main 
-from .common import ensure_dirs
-
+from macroeconomics.datasets.data import data_main
+from macroeconomics.viz.charts.timeseries import plot_main 
+from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 def cmd_fetch(ns):    
     # Build the args object expected by data_main
     args = SimpleNamespace(
@@ -17,6 +16,9 @@ def cmd_plot(ns):
     print("do plot", ns)
     plot_main(ns)
 
+def cmd_map(ns):
+    print("do map", ns)
+    make_europe_map(ns)
 def cmd_dash(ns):
     from .dash_app import create_app
     app = create_app()
@@ -35,6 +37,10 @@ def main():
     p_plot = sub.add_parser("plot", help="Plot indicators from latest CSVs")
     p_plot.add_argument("--countries", help="Comma-separated ISO3 codes (e.g., ESP,FRA,DEU)")
     p_plot.set_defaults(func=cmd_plot)
+
+    p_map = sub.add_parser("map", help="Draw interactive maps of Europe")
+    p_map.set_defaults(func=cmd_map)
+
     p_dash = sub.add_parser("dash", help="Run the Dash app")
     p_dash.add_argument("--host", default="127.0.0.1")
     p_dash.add_argument("--port", type=int, default=8050)
