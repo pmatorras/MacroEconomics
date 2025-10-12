@@ -8,7 +8,7 @@ from typing import Iterable, Optional, Tuple, Union
 
 import requests
 
-from macroeconomics.core.common import EUROPE_ISO3, NATURAL_EARTH_URL, GEOBOUNDARIES_URL, DEFAULT_FEATUREIDKEY, DEFAULT_GEOJSON, ASSETS_DIR
+from macroeconomics.core.constants import EUROPE_ISO3, NATURAL_EARTH_URL, GEOBOUNDARIES_URL, DEFAULT_FEATUREIDKEY, DEFAULT_GEOJSON, ASSETS_DIR
 from macroeconomics.viz.maps.europe import filter_to_europe, clip_to_mainland_europe
 
 Json = dict

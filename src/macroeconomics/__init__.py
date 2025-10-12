@@ -9,7 +9,7 @@ __version__ = "0.2.0"
 __author__ = "Pablo Matorras-Cuevas"
 
 # Package-level configuration
-from macroeconomics.core.common import ensure_dirs
+from macroeconomics.core.functions import ensure_dirs
 
 # Ensure directories exist when package is imported
 ensure_dirs()

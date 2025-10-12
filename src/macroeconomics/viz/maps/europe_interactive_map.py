@@ -6,7 +6,7 @@ import plotly.express as px
 from datetime import datetime
 
 
-from macroeconomics.core.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
+from macroeconomics.core.constants import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe

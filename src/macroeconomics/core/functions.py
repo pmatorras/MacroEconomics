@@ -1,20 +1,29 @@
-from macroeconomics.core.constants import COUNTRIES_ISO3, INDICATORS, DATA_DIR
-from macroeconomics.logging_config import logger
-import pandas as pd
 import re
+import pandas as pd
 from pathlib import Path
+from typing import Iterable
+from macroeconomics.core.constants import COUNTRIES_ISO3,INDICATORS,DATA_DIR, FIGURE_DIR, LOG_DIR,ASSETS_DIR
+from macroeconomics.logging_config import logger
+
+def ensure_dirs(paths: Iterable[Path] | None = None) -> None:
+    """
+    Create output directories if they don't exist (idempotent).
+    """
+    targets = tuple(paths) if paths else (DATA_DIR, FIGURE_DIR, LOG_DIR,ASSETS_DIR)
+    for p in targets:
+        p.mkdir(parents=True, exist_ok=True)
+
 def notInDictionary(codes, dict):
     '''Ensure the country codes are in the dictionary'''
     missing_countries = set(codes) - set(dict.keys())
     if missing_countries:
         logger.warning("These country codes are missing from the dictionary:", missing_countries)
-
-
+        
 def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
     '''Ensure the input file is the latest IMF information'''
     data_folder = Path(data_folder)
     patterns = {
-        "timeseries": r"imf_weo_timeseries_(\d{4})_(april|october)\.csv",
+        "time_series": r"imf_weo_timeseries_(\d{4})_(april|october)\.csv",
         "countries": r"imf_weo_countries_(\d{4})_(april|october)\.csv",
         "indicators": r"imf_weo_indicators_(\d{4})_(april|october)\.csv"
     }
@@ -55,7 +64,7 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     
     # Use same file loading
     latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
-    TIMESERIES_FILE = latest_files.get("timeseries")
+    TIMESERIES_FILE = latest_files.get("time_series")
     COUNTRIES_FILE = latest_files.get("countries")
     INDICATORS_FILE = latest_files.get("indicators")
 
@@ -100,22 +109,8 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
         'indicators_dict': indicators_dict,
         'df_indicators': df_indicators_fil,
         'latest_year': latest_year,
+        'latest_files' : latest_files,
         'country_options':country_options,
         'indicator_options': indicator_options, 
         'default_indicator': default_indicator  
     }
-
-def shared_title_style(fig, indicator, indicators_dict):
-    """Apply the same title formatting as makePlotly"""
-    fig.update_layout(
-        title=dict(text=''),  # Clear default title
-        annotations=[dict(
-            text=indicators_dict[indicator],
-            x=0.5, y=1.01,
-            xref='paper', yref='paper',
-            showarrow=False,
-            font=dict(size=26),
-            xanchor='center',
-            yanchor='bottom')]
-    )
-    return fig

@@ -6,7 +6,7 @@ from dash import Dash, dcc, html, Input, Output
 from macroeconomics.viz.theme import get_shared_data_components
 from macroeconomics.viz.charts.timeseries import makePlotly
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
-from macroeconomics.core.common import DATA_DIR, INDICATORS
+from macroeconomics.core.constants import DATA_DIR, INDICATORS
 from macroeconomics.logging_config import logger
 
 def create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks):
