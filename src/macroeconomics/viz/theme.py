@@ -1,6 +1,7 @@
 from macroeconomics.core.constants import COUNTRIES_ISO3, INDICATORS, DATA_DIR
 from macroeconomics.logging_config import logger
-from pathlib import Path
+from macroeconomics.core.functions import notInDictionary
+
 
 def shared_title_style(fig, indicator, indicators_dict):
     """Apply the same title formatting as makePlotly"""

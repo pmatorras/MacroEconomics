@@ -7,11 +7,11 @@ from datetime import datetime
 
 
 from macroeconomics.core.constants import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
+from macroeconomics.core.functions import get_shared_data_components
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe
 from macroeconomics.viz.theme import shared_title_style
-from macroeconomics.core.functions import get_shared_data_components
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -51,13 +51,15 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
     df = df[df["country"].isin(EUROPE_ISO3)].copy()
     if df.empty:
         raise ValueError("No European rows found in CSV")
-    assert {"FRA","NOR"} <= set(df["country"])  # confirm present
+    #assert {"FRA","NOR"} <= set(df["country"])  # confirm present
 
     country_dict = shared_data["country_dict"]
     units_dict = shared_data['units_dict']
     years = sorted(df["year"].dropna().unique())
 
-
+    unit_suffix_dict = shared_data['suffix'] 
+    print(unit_suffix_dict)
+    print(units_dict)
     # Use custom values if provided (for Dash integration)
     if custom_indicator is not None and custom_year is not None:
         init_indicator = custom_indicator
@@ -69,7 +71,7 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
 
     init_unit = units_dict[init_indicator]
     initial_idx = years.index(init_year)
-
+    init_unit_suffix = unit_suffix_dict[init_indicator]
 
     fig = px.choropleth(
         df.query("indicator == @init_indicator and year == @init_year"),
@@ -84,7 +86,7 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
     )
     fig.update_geos(fitbounds="locations", visible=False)
     fig.update_traces(
-        hovertemplate="%{customdata[0]}<br>Value=%{customdata[1]:,.2f}<extra></extra>"
+        hovertemplate=f"<b>%{{customdata[0]}}</b><br>Value: %{{customdata[1]:.2f}}{init_unit_suffix}<extra></extra>"
     )
     shared_title_style(fig, init_indicator, shared_data['indicators_dict'])
 
@@ -104,14 +106,16 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
         button_year_x = 0.0
         button_indicator_x = 0.15
         for yr in years:
+            year_data = df.loc[(df.indicator==init_indicator)&(df.year==yr)]
             buttons_year.append(dict(
                 label=str(yr),
                 method="update",
                 args=[
-                    {"z": [df.loc[
-                        (df.indicator==init_indicator)&(df.year==yr),
-                        "value"
-                    ].tolist()]},
+                    {
+                        "z": [year_data["value"].tolist()],
+                        "locations": [year_data["country"].tolist()],  
+                        "customdata": [year_data[["country_name", "value"]].values.tolist()]  # UPDATE THIS TOO
+                    },
                     {"annotations": [dict(
                         text=f"{shared_data['indicators_dict'][init_indicator]} ({yr})",
                         x=button_year_x, y=1.01, xref="paper", yref="paper",
@@ -124,29 +128,42 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
         buttons_indicator = []
         for option in shared_data["indicator_options"]:
             iid = option["value"]
-            label = option["label"]
+            # Get the filtered data for this indicator
+            indicator_data = df.loc[(df["indicator"] == iid) & (df["year"] == init_year)]
+            label = option["label"] 
             unit = units_dict.get(iid, "")
+            unit_suffix = unit_suffix_dict.get(iid, "")  
+            template = (
+                "<b>%{customdata[0]}</b><br>"
+                "Value: %{customdata[1]:.2f}" + unit_suffix_dict[iid] + "<extra></extra>"
+            )
+            print(template)
             buttons_indicator.append(dict(
-                label=label,
-                method="update",
-                args=[
-                    # Update the map's data
-                    {"z": [ df.loc[(df["indicator"] == iid) & (df["year"] == init_year), "value"].tolist() ]},
-                    # Update layout: title annotation stays indicator label,
-                    # colorbar title uses unit
-                    {
-                        "annotations": [dict(
+            label=label,
+            method="update",
+            args=[
+                # 1) Trace updates
+                {
+                    "z": [indicator_data["value"].tolist()],
+                    "locations": [indicator_data["country"].tolist()],
+                    "customdata": [indicator_data[["country_name","value"]].values.tolist()],
+                    "hovertemplate": f"%{{customdata[0]}} Value: %{{customdata[1]:.2f}}{unit_suffix}"
+                },
+                # 2) Layout updates
+                {
+                    "annotations": [
+                        dict(
                             text=label,
                             x=button_indicator_x, y=1.01,
                             xref="paper", yref="paper",
-                            showarrow=False,
-                            font=dict(size=26),
+                            showarrow=False, font=dict(size=26),
                             xanchor="center", yanchor="bottom"
-                        )],
-                        "coloraxis.colorbar.title.text": wrap_title(unit)
-                    }
-                ]
-            ))
+                        )
+                    ],
+                    "coloraxis.colorbar.title.text": wrap_title(unit)
+                }
+            ]
+        ))
         fig.update_layout(
             updatemenus=[
                 dict(

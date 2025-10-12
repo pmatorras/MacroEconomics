@@ -113,6 +113,7 @@ def create_app():
     indicators_dict = data["indicators_dict"]
     country_options = data["country_options"]
     indicator_options = data["indicator_options"]
+    unit_suffix_dict = data["suffix"]
     # Infer available years from wide timeseries columns that look like integers
     years = sorted(y for y in df_timeseries["year"].dropna().unique())
     YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
@@ -178,7 +179,7 @@ def create_app():
         if "country_name" not in df.columns:
             df["country_name"] = df["country"].map(country_dict)
         # Use makePlotly with expected signature
-        fig = makePlotly(df, indicator, indicators_dict, df_indicators, latest_year, save_html=False, suffix=None)
+        fig = makePlotly(df, indicator, indicators_dict, unit_suffix_dict, df_indicators, latest_year, save_html=False, suffix=None)
         return fig
 
     # Map callback
