@@ -102,8 +102,8 @@ def create_map_layout(indicator_options, default_indicators):
         dcc.Graph(id="europe-map", style={"height": "70vh"}),
     ])
 
-def create_app():
-    data = get_shared_data_components()  # returns a dict
+def create_app(args):
+    data = get_shared_data_components(args.do_features)  # returns a dict
     df_timeseries = data["time_series"]
     df_countries = data["countries"]
     df_indicators = data["df_indicators"]
@@ -201,7 +201,8 @@ def create_app():
         ].copy()
         
         # Call your existing map function with filtered data
-        fig = make_europe_map(save_html=False,
+        fig = make_europe_map(args=args,
+                              save_html=False,
                               do_buttons=False,        
                               custom_indicator=indicator,
                               custom_year=year)

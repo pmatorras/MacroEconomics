@@ -99,6 +99,7 @@ def features_main(args):
     dup_id = df_indicators.assign(
         id=df_indicators["id"].astype(str) + f"_index{BASELINE_YEAR}",
         label=df_indicators["label"].astype(str) + f" ({BASELINE_YEAR}=100)",
+        unit=f"{BASELINE_YEAR}=100",
         dataset=df_indicators["dataset"].astype(str)+ " recalculated"
     )
     dup_pct = df_indicators.assign(

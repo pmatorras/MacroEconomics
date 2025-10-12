@@ -25,11 +25,12 @@ def cmd_map(ns):
     make_europe_map(ns)
 def cmd_dash(ns):
     from .dash_app import create_app
-    app = create_app()
+    app = create_app(args=ns)
     app.run(debug=ns.debug, host=ns.host, port=ns.port)
 
 def main():
     parser = argparse.ArgumentParser(prog="macroeconomics")
+    parser.add_argument( "--do_features", action="store_true",help="Use feature-augmented files (adds *_with_features.csv patterns).")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_fetch = sub.add_parser("data", help="Fetch IMF WEO data and write CSVs")

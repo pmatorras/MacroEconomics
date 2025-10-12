@@ -15,7 +15,6 @@ from macroeconomics.viz.theme import shared_title_style
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    print(df)
     required = {"country", "indicator", "year", "value"}
     missing = required - set(df.columns)
     if missing:
@@ -35,17 +34,16 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
+def make_europe_map(args, save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
     """
-
     geojson = get_geojson()
     fkey = "id"
     continental_geo =  clip_to_mainland_europe(geojson)
 
-    shared_data = get_shared_data_components()
+    shared_data = get_shared_data_components(do_features=args.do_features)
     df = shared_data["time_series"]
     # Filter to Europe to match the GeoJSON subset
     df = df[df["country"].isin(EUROPE_ISO3)].copy()
@@ -58,8 +56,6 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
     years = sorted(df["year"].dropna().unique())
 
     unit_suffix_dict = shared_data['suffix'] 
-    print(unit_suffix_dict)
-    print(units_dict)
     # Use custom values if provided (for Dash integration)
     if custom_indicator is not None and custom_year is not None:
         init_indicator = custom_indicator
@@ -137,7 +133,6 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
                 "<b>%{customdata[0]}</b><br>"
                 "Value: %{customdata[1]:.2f}" + unit_suffix_dict[iid] + "<extra></extra>"
             )
-            print(template)
             buttons_indicator.append(dict(
             label=label,
             method="update",

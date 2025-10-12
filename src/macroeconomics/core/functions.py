@@ -23,7 +23,7 @@ def get_suffix(units_dict):
     suffix_dict = {}
     for key in units_dict:
         suffix = ''
-        if 'percent' in units_dict[key].lower():
+        if 'percent' in units_dict[key].lower() or '(pp)' in units_dict[key].lower():
             suffix = '%'
         elif 'billion' in units_dict[key].lower():
             suffix = ' billions'
@@ -34,14 +34,27 @@ def get_suffix(units_dict):
         suffix_dict[key] = suffix
     return suffix_dict
 
-def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
-    '''Ensure the input file is the latest IMF information'''
-    data_folder = Path(data_folder)
+def do_patterns(do_features: bool = False) -> dict[str, str]:
     patterns = {
         "time_series": r"imf_weo_timeseries_(\d{4})_(april|october)\.csv",
-        "countries": r"imf_weo_countries_(\d{4})_(april|october)\.csv",
-        "indicators": r"imf_weo_indicators_(\d{4})_(april|october)\.csv"
+        "countries":   r"imf_weo_countries_(\d{4})_(april|october)\.csv",
+        "indicators":  r"imf_weo_indicators_(\d{4})_(april|october)\.csv",
     }
+    if not do_features:
+        return patterns
+
+    # Only mutate keys that produce feature-augmented files
+    mutate = {"time_series", "indicators"}
+    return {
+        k: re.sub(r"\.csv$", "_with_features.csv", v) if k in mutate else v
+        for k, v in patterns.items()
+    }
+
+def find_latest_files_and_year(data_folder, do_features=False, prompt_on_mismatch=False):
+    '''Ensure the input file is the latest IMF information'''
+    data_folder = Path(data_folder)
+
+    patterns = do_patterns(do_features)
 
     latest_files = {}
     years = {}
@@ -71,14 +84,14 @@ def find_latest_files_and_year(data_folder, prompt_on_mismatch=False):
     latest_year = max_year = max(int(y) for y in years.values()) if years else None
     return latest_files, latest_year
 
-def get_shared_data_components(country_codes=None, indicator_codes=None):
+def get_shared_data_components(do_features=False, country_codes=None, indicator_codes=None):
     """Get the same data loading logic as plot.py and dash_app.py"""
     
     country_codes = country_codes or COUNTRIES_ISO3
     indicator_codes = indicator_codes or INDICATORS
     
     # Use same file loading
-    latest_files, latest_year = find_latest_files_and_year(DATA_DIR)
+    latest_files, latest_year = find_latest_files_and_year(data_folder=DATA_DIR, do_features=do_features)
     TIMESERIES_FILE = latest_files.get("time_series")
     COUNTRIES_FILE = latest_files.get("countries")
     INDICATORS_FILE = latest_files.get("indicators")
@@ -96,9 +109,11 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     df_timeseries = pd.concat(filtered_chunks)
     df_countries = pd.read_csv(latest_files.get("countries"))
     df_indicators = pd.read_csv(latest_files.get("indicators"))
-
     df_countries_fil = df_countries[df_countries['id'].isin(country_codes)]
-    df_indicators_fil = df_indicators[df_indicators['id'].isin(indicator_codes)]
+    if do_features:
+        df_indicators_fil = df_indicators #should work given that the modified file is curated
+    else:
+        df_indicators_fil = df_indicators[df_indicators['id'].isin(indicator_codes)]
     # Optional: sanitize headers/types
     df_indicators.columns = df_indicators.columns.str.strip()
     df_indicators["id"] = df_indicators["id"].astype(str)
