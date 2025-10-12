@@ -34,7 +34,7 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map(args, save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
+def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
@@ -43,7 +43,7 @@ def make_europe_map(args, save_html=True, do_buttons=True, custom_indicator=None
     fkey = "id"
     continental_geo =  clip_to_mainland_europe(geojson)
 
-    shared_data = get_shared_data_components(do_features=args.do_features)
+    shared_data = get_shared_data_components(do_features=do_features)
     df = shared_data["time_series"]
     # Filter to Europe to match the GeoJSON subset
     df = df[df["country"].isin(EUROPE_ISO3)].copy()
