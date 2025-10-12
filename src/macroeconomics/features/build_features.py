@@ -1,5 +1,5 @@
 from macroeconomics.logging_config import logger
-from macroeconomics.core.constants import DATA_DIR, COUNTRIES_ISO3, INDICATORS, ROOT_DIR, MODIFIED_NAME, BASELINE_YEAR
+from macroeconomics.core.constants import DATA_DIR, COUNTRIES_ISO3, INDICATORS, ROOT_DIR, MODIFIED_NAME
 from macroeconomics.core.functions import get_shared_data_components
 # src/macroeconomics/features/build_features.py
 
@@ -85,6 +85,7 @@ def add_2019_norm_long(df, baseline_year=2019, do_cum=True, include_all=False):
     return pd.concat(out, ignore_index=True).sort_values(['country','indicator','year'])
 
 def features_main(args):
+    print(args.baseline)
     data = get_shared_data_components()
     latest_files = data["latest_files"]
     time_series_path = latest_files["time_series"]
@@ -97,20 +98,20 @@ def features_main(args):
 
 
     dup_id = df_indicators.assign(
-        id=df_indicators["id"].astype(str) + f"_index{BASELINE_YEAR}",
-        label=df_indicators["label"].astype(str) + f" ({BASELINE_YEAR}=100)",
-        unit=f"{BASELINE_YEAR}=100",
+        id=df_indicators["id"].astype(str) + f"_index{args.baseline}",
+        label=df_indicators["label"].astype(str) + f" ({args.baseline}=100)",
+        unit=f"{args.baseline}=100",
         dataset=df_indicators["dataset"].astype(str)+ " recalculated"
     )
     dup_pct = df_indicators.assign(
-        id=df_indicators["id"].astype(str) + f"_pct_cum{BASELINE_YEAR}",
-        label=df_indicators["label"].astype(str) + f" (percent vs. {BASELINE_YEAR})",
-        unit=f"Change since {BASELINE_YEAR} (pp)",
+        id=df_indicators["id"].astype(str) + f"_pct_cum{args.baseline}",
+        label=df_indicators["label"].astype(str) + f" (percent vs. {args.baseline})",
+        unit=f"Change since {args.baseline} (pp)",
         dataset=df_indicators["dataset"].astype(str)+ " recalculated"
     )
     df_indicators_with_features = pd.concat([df_indicators, dup_id, dup_pct], ignore_index=True)
-    pos_columns = [f'index{str(BASELINE_YEAR)}']
-    pos_columns.extend([f"pct_cum{str(BASELINE_YEAR)}"])
+    pos_columns = [f'index{str(args.baseline)}']
+    pos_columns.extend([f"pct_cum{str(args.baseline)}"])
 
 
     logger.info(f"Saving modified timeseries df to: {new_timeseries_path}")

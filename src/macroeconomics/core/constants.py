@@ -9,7 +9,6 @@ DATA_DIR: Path = ROOT_DIR / "data"
 FIGURE_DIR: Path = ROOT_DIR / "figures"
 LOG_DIR: Path = ROOT_DIR / "logs"
 MODIFIED_NAME = "_with_features"
-BASELINE_YEAR = "2019"
 # Dashboard indicators (treat as constants)
 INDICATORS: tuple[str, ...] = (
     "LP", "NGDPD", "PPPPC", "NGDPDPC", "PCPIEPCH", "LUR", "NGDP_RPCH"

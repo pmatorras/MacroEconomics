@@ -31,6 +31,7 @@ def cmd_dash(ns):
 def main():
     parser = argparse.ArgumentParser(prog="macroeconomics")
     parser.add_argument( "--do_features", action="store_true",help="Use feature-augmented files (adds *_with_features.csv patterns).")
+    parser.add_argument( "--baseline",help="Chose baseline year. Default, 2019", default=2019)
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_fetch = sub.add_parser("data", help="Fetch IMF WEO data and write CSVs")
