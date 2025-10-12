@@ -73,7 +73,6 @@ def get_shared_data_components(country_codes=None, indicator_codes=None):
     logger.info(f"Countries file: {COUNTRIES_FILE}")
     logger.info(f"Indicators file: {INDICATORS_FILE}")
     # Load same dictionaries
-    print(latest_files)
     #Protect in case the csv gets to be extremely big
     filtered_chunks = []
     for chunk in pd.read_csv(TIMESERIES_FILE, chunksize=10000):

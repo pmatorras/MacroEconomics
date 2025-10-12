@@ -10,7 +10,8 @@ from macroeconomics.core.constants import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe
-from macroeconomics.viz.theme import get_shared_data_components,shared_title_style
+from macroeconomics.viz.theme import shared_title_style
+from macroeconomics.core.functions import get_shared_data_components
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)

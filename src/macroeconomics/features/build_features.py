@@ -1,5 +1,5 @@
 from macroeconomics.logging_config import logger
-from macroeconomics.core.constants import DATA_DIR, COUNTRIES_ISO3, INDICATORS, ROOT_DIR, MODIFIED_NAME 
+from macroeconomics.core.constants import DATA_DIR, COUNTRIES_ISO3, INDICATORS, ROOT_DIR, MODIFIED_NAME, BASELINE_YEAR
 from macroeconomics.core.functions import get_shared_data_components
 # src/macroeconomics/features/build_features.py
 
@@ -84,10 +84,9 @@ def add_2019_norm_long(df, baseline_year=2019, do_cum=True, include_all=False):
             out.append(tmp[['country','indicator','year','value']])
     return pd.concat(out, ignore_index=True).sort_values(['country','indicator','year'])
 
-def features_main():
+def features_main(args):
     data = get_shared_data_components()
     latest_files = data["latest_files"]
-    print(latest_files["time_series"])
     time_series_path = latest_files["time_series"]
     indicators_path = latest_files["indicators"]
     new_timeseries_path = time_series_path.with_stem(time_series_path.stem + MODIFIED_NAME) 
@@ -96,23 +95,21 @@ def features_main():
     df_indicators = data["df_indicators"]
     df_long = add_2019_norm_long(time_series)
 
-    baseline_year =2019
-    indicators_dict = data["indicators_dict"]
-    print(df_indicators, indicators_dict)
+
     dup_id = df_indicators.assign(
-        id=df_indicators["id"].astype(str) + f"_index{baseline_year}",
-        label=df_indicators["label"].astype(str) + f" ({baseline_year}=100)",
+        id=df_indicators["id"].astype(str) + f"_index{BASELINE_YEAR}",
+        label=df_indicators["label"].astype(str) + f" ({BASELINE_YEAR}=100)",
         dataset=df_indicators["dataset"].astype(str)+ " recalculated"
     )
     dup_pct = df_indicators.assign(
-        id=df_indicators["id"].astype(str) + f"_pct_cum{baseline_year}",
-        label=df_indicators["label"].astype(str) + f" (percent vs. {baseline_year})",
-        unit=f"Change since {baseline_year} (pp)",
+        id=df_indicators["id"].astype(str) + f"_pct_cum{BASELINE_YEAR}",
+        label=df_indicators["label"].astype(str) + f" (percent vs. {BASELINE_YEAR})",
+        unit=f"Change since {BASELINE_YEAR} (pp)",
         dataset=df_indicators["dataset"].astype(str)+ " recalculated"
     )
     df_indicators_with_features = pd.concat([df_indicators, dup_id, dup_pct], ignore_index=True)
-    pos_columns = [f'index{str(baseline_year)}']
-    pos_columns.extend([f"pct_cum{str(baseline_year)}"])
+    pos_columns = [f'index{str(BASELINE_YEAR)}']
+    pos_columns.extend([f"pct_cum{str(BASELINE_YEAR)}"])
 
 
     logger.info(f"Saving modified timeseries df to: {new_timeseries_path}")
@@ -121,5 +118,3 @@ def features_main():
     df_long.to_csv(new_timeseries_path, index=False)
     df_indicators_with_features.to_csv(new_indicators_path,index=False)
 
-if __name__ == "__main__":
-    features_main()

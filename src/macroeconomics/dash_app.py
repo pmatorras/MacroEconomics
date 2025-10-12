@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from macroeconomics.viz.theme import get_shared_data_components
+from macroeconomics.core.functions import get_shared_data_components
 from macroeconomics.viz.charts.timeseries import makePlotly
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
 from macroeconomics.core.constants import DATA_DIR, INDICATORS

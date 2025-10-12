@@ -1,9 +1,10 @@
 import argparse
 from types import SimpleNamespace
-
+from macroeconomics.logging_config import logger
 from macroeconomics.datasets.data import data_main
 from macroeconomics.viz.charts.timeseries import plot_main 
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
+from macroeconomics.features.build_features import features_main
 def cmd_fetch(ns):    
     # Build the args object expected by data_main
     args = SimpleNamespace(
@@ -12,12 +13,15 @@ def cmd_fetch(ns):
         debug=ns.debug,             # bool
     )
     data_main(args)
+def cmd_features(ns):
+    logger.info(f"Add extra features {ns}")
+    features_main(ns)
 def cmd_plot(ns):
-    print("do plot", ns)
+    logger.info(f"Do plots {ns}")
     plot_main(ns)
 
 def cmd_map(ns):
-    print("do map", ns)
+    logger.info(f"Do maps {ns}")
     make_europe_map(ns)
 def cmd_dash(ns):
     from .dash_app import create_app
@@ -33,7 +37,10 @@ def main():
     p_fetch.add_argument("--countries", help="Comma-separated ISO3 codes (e.g., ESP,FRA,DEU)")
     p_fetch.add_argument("--debug", action="store_true", help="Suffix output filenames with _debug")
     p_fetch.set_defaults(func=cmd_fetch)
-# in parser wiring:
+
+    p_features = sub.add_parser("features", help="Add additional features") #For now, only calculate ratios vs 2019
+    p_features.set_defaults(func=cmd_features)
+
     p_plot = sub.add_parser("plot", help="Plot indicators from latest CSVs")
     p_plot.add_argument("--countries", help="Comma-separated ISO3 codes (e.g., ESP,FRA,DEU)")
     p_plot.set_defaults(func=cmd_plot)
