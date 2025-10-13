@@ -13,7 +13,6 @@ def create_timeseries_layout(country_options, indicator_options, default_countri
     return html.Div(
         style={"maxWidth": "1100px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
-            html.H2("IMF Macro Dashboard"),
             html.Div(
                 style={"display": "flex", "gap": "12px", "flexWrap": "wrap"},
                 children=[
@@ -67,7 +66,6 @@ def create_timeseries_layout(country_options, indicator_options, default_countri
 def create_map_layout(indicator_options, default_indicators):
     """New map tab layout"""
     return html.Div([
-        html.H3("European Map Visualization"),
         html.Div(
             style={"display": "flex", "gap": "12px", "marginBottom": "20px"},
             children=[
@@ -133,8 +131,6 @@ def create_app(args=None):
     app.layout = html.Div(
         style={"maxWidth": "1200px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
-            html.H2("IMF Macro Dashboard"),
-            
             # Tab selector
             dcc.Tabs(id="main-tabs", value="tab-timeseries", children=[
                 dcc.Tab(label="Time Series", value="tab-timeseries"),

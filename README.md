@@ -5,6 +5,7 @@ A lightweight toolkit to fetch IMF WEO data, generate indicator plots, and launc
 ### Features 
 
 - Data fetch: downloads country, indicator metadata, and timeseries from the IMF Datamapper API and writes versioned CSVs into the data folder with a release tag inferred from date logic.
+- Additional features: Retrieves the downloaded files, and calculates some additional variables, like ratios with respect to a baseline year. Saves the output to separated csvs for clarity.
 - Plotting: 
     - creates per‑indicator Plotly HTML charts for selected countries, with a dashed/solid style boundary at the latest projection year and a clean legend treatment.
     - Interactive european maps for each chosen indicator and year
@@ -29,9 +30,13 @@ The project structure is as follows:
 ```
 macroeconomics/
 ├── core/
-│ └── common.py # Central paths, defaults, and directory helpers
+│ ├── constants.py # Central paths, defaults
+│ └── functions.py # directory helpers and common functions.
 ├── datasets/
-│ └── data.py # IMF API integration and CSV generation
+│ ├── imf_api.py # IMF particular utilities
+│ └── data.py # CSV generation
+├── features/
+│ └── build_features.py # Add additional features to the csv files
 ├── viz/
 │ ├── theme.py # Shared styling, data loading, and theming utilities
 │ ├── charts/
@@ -48,8 +53,9 @@ macroeconomics/
 ````
 ### Key Components
 
-- **`core/common.py`**: Central configuration including `DATA_DIR`, `FIGURE_DIR`, default indicators, and path management utilities
-- **`dataset/data.py`**: IMF API helpers, data validation, deduplication, and CSV output with computed release tags
+- **`core/`**: Central configuration including `DATA_DIR`, `FIGURE_DIR`, default indicators, and path management utilities
+- **`dataset/`**: IMF API helpers, data validation, deduplication, and CSV output with computed release tags
+- **`features/`**: Calculate additional features, such as ratios with respect to a given year, and save to new csv files
 - **`viz/theme.py`**: Shared data loading, styling utilities, and consistent theming across visualizations
 - **`dash_app.py`**: Multi-tab application featuring interactive time series charts and European choropleth maps
 - **`main.py`**: CLI dispatcher with subcommands to fetch, plot, and run the Dash app
@@ -85,11 +91,19 @@ SECRET_KEY=<paste a long random value>
 ```
 
 - Copy the output into SECRET_KEY.
-    - If using online tools like [Render.com](https://dashboard.render.com/) allow to define the enviromental variable on their platform, so its not recommended to include `.env` into the Github repository.
+
+5. **Setup to run at gunicorn**
+
+- gunicorn doesn't recognise input parameters, so if one wants to run the additional features, an environment needs to be created. In the terminal
+```
+export MACRO_DO_FEATURES=1
+```
+
+- If using online tools like [Render.com](https://dashboard.render.com/) allow to define the enviromental variable (`SECRET_KEY` or `MACRO_DO_FEATURES`) on their platform, so its not recommended to include `.env` into the Github repository.
 
 
 
-This key is used by the Dash/Flask server for session signing. It must be non-empty in production.
+
 
 
 
@@ -107,6 +121,9 @@ This key is used by the Dash/Flask server for session signing. It must be non-em
 - Generate time series:
 `python -m macroeconomics plot --countries ESP,FRA,DEU`.
     - Reads the latest CSVs, filters by countries, and writes one HTML per indicator to `FIGURE_DIR` with “plot_{indicator}{suffix}.html”.
+- Calculate additional features:
+`python -m macroeconomics features`
+    - Reads the latest CSVs, calculates percentage change with respect to a baseline year, defaulted to 2019, saves it to separate csv file.
 - Generate interactive maps:
 `python -m macroeconomics map`
     - Reads the latest CSVs, generates one interactive european map where the indicator and the year can be chosen. It is saved into to `FIGURE_DIR` with “plot_{indicator}{suffix}.html”.
@@ -129,17 +146,17 @@ This key is used by the Dash/Flask server for session signing. It must be non-em
 
 ### Dashboard notes
 
-- Layout: country and indicator dropdowns, year range slider, and a main graph component, all wired to update_graph via @app.callback.
-- Entrypoint: dash_app(debug, host, port) runs app.run; server is also exposed as server for deployments.
+- Layout: country and indicator dropdowns, year range slider, and a main graph component, all wired to update_graph via `@app.callback`.
+- Entrypoint: `dash_app(debug, host, port)` runs `app.run`; `server` is also exposed as server for deployments.
 
 
 ### Troubleshooting
 
-- Module not found when running python -m: run from the repo root so the src layout is discoverable, or use an editable install to make imports work from any directory within the venv.
-- “update_graph takes N args” errors: ensure the function signature matches the number and order of Inputs/States in the @app.callback decorator for the dashboard.
+- `Module not found when running python -m`: run from the repo root so the src layout is discoverable, or use an editable install to make imports work from any directory within the venv.
+- `update_graph takes N args` errors: ensure the function signature matches the number and order of Inputs/States in the `@app.callback` decorator for the dashboard.
 
 
 ### Extending data
 
-- Add indicators/countries: set via CLI strings like --indicators NGDPD,PCPIEPCH and --countries ESP,FRA,DEU, or adjust defaults in common.py.
+- Add indicators/countries: set via CLI strings like `--indicators NGDPD,PCPIEPCH and --countries ESP,FRA,DEU`, or adjust defaults in `core/constants.py`.
 - Batch pipeline: combine fetch and plot by invoking the two subcommands sequentially, or add a pipeline subcommand that forwards shared args into data_main and plot_main.
