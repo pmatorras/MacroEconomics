@@ -6,15 +6,15 @@ import plotly.express as px
 from datetime import datetime
 
 
-from macroeconomics.core.common import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
+from macroeconomics.core.constants import EUROPE_ISO3, FIGURE_DIR, DATA_DIR
+from macroeconomics.core.functions import get_shared_data_components
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe
-from macroeconomics.viz.theme import get_shared_data_components,shared_title_style
+from macroeconomics.viz.theme import shared_title_style
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    print(df)
     required = {"country", "indicator", "year", "value"}
     missing = required - set(df.columns)
     if missing:
@@ -34,17 +34,16 @@ def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
         label += f"<br>({unit})"
     return label
 
-def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
+def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
     """
     Build a single choropleth figure with dropdowns for indicator and year.
     Expects a tidy CSV with columns: ISO3, indicator, year, value.
     """
-
     geojson = get_geojson()
     fkey = "id"
     continental_geo =  clip_to_mainland_europe(geojson)
 
-    shared_data = get_shared_data_components()
+    shared_data = get_shared_data_components(do_features=do_features)
     df = shared_data["time_series"]
     # Filter to Europe to match the GeoJSON subset
     df = df[df["country"].isin(EUROPE_ISO3)].copy()
@@ -57,8 +56,6 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
     years = sorted(df["year"].dropna().unique())
 
     unit_suffix_dict = shared_data['suffix'] 
-    print(unit_suffix_dict)
-    print(units_dict)
     # Use custom values if provided (for Dash integration)
     if custom_indicator is not None and custom_year is not None:
         init_indicator = custom_indicator
@@ -136,7 +133,6 @@ def make_europe_map(save_html=True, do_buttons=True, custom_indicator=None, cust
                 "<b>%{customdata[0]}</b><br>"
                 "Value: %{customdata[1]:.2f}" + unit_suffix_dict[iid] + "<extra></extra>"
             )
-            print(template)
             buttons_indicator.append(dict(
             label=label,
             method="update",

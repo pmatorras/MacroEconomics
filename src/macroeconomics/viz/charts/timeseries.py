@@ -1,8 +1,9 @@
 import pandas as pd
 import plotly.express as px
-from macroeconomics.core.common import FIGURE_DIR, COUNTRIES_ISO3, INDICATORS, DATA_DIR
+from macroeconomics.core.constants import FIGURE_DIR, COUNTRIES_ISO3, INDICATORS, DATA_DIR
 from macroeconomics.logging_config import logger
-from macroeconomics.viz.theme import get_shared_data_components,shared_title_style
+from macroeconomics.viz.theme import shared_title_style
+from macroeconomics.core.functions import get_shared_data_components
 
 
 

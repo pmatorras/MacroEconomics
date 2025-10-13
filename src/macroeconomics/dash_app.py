@@ -3,17 +3,16 @@ from pathlib import Path
 import pandas as pd
 import os
 from dash import Dash, dcc, html, Input, Output
-from macroeconomics.viz.theme import get_shared_data_components
+from macroeconomics.core.functions import get_shared_data_components
 from macroeconomics.viz.charts.timeseries import makePlotly
 from macroeconomics.viz.maps.europe_interactive_map import make_europe_map
-from macroeconomics.core.common import DATA_DIR, INDICATORS
+from macroeconomics.core.constants import DATA_DIR, INDICATORS
 from macroeconomics.logging_config import logger
 
 def create_timeseries_layout(country_options, indicator_options, default_countries, default_indicators, YEAR_MIN, YEAR_MAX, marks):
     return html.Div(
         style={"maxWidth": "1100px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
-            html.H2("IMF Macro Dashboard"),
             html.Div(
                 style={"display": "flex", "gap": "12px", "flexWrap": "wrap"},
                 children=[
@@ -67,7 +66,6 @@ def create_timeseries_layout(country_options, indicator_options, default_countri
 def create_map_layout(indicator_options, default_indicators):
     """New map tab layout"""
     return html.Div([
-        html.H3("European Map Visualization"),
         html.Div(
             style={"display": "flex", "gap": "12px", "marginBottom": "20px"},
             children=[
@@ -102,8 +100,13 @@ def create_map_layout(indicator_options, default_indicators):
         dcc.Graph(id="europe-map", style={"height": "70vh"}),
     ])
 
-def create_app():
-    data = get_shared_data_components()  # returns a dict
+def create_app(args=None):
+    do_features = os.getenv("MACRO_DO_FEATURES", "0") == "1"
+    baseline = int(os.getenv("MACRO_BASELINE", "2019"))
+    if args is not None:
+        do_features = getattr(args, "do_features", do_features)
+        baseline = getattr(args, "baseline", baseline)
+    data = get_shared_data_components(do_features)  # returns a dict
     df_timeseries = data["time_series"]
     df_countries = data["countries"]
     df_indicators = data["df_indicators"]
@@ -128,8 +131,6 @@ def create_app():
     app.layout = html.Div(
         style={"maxWidth": "1200px", "margin": "0 auto", "fontFamily": "Arial, sans-serif"},
         children=[
-            html.H2("IMF Macro Dashboard"),
-            
             # Tab selector
             dcc.Tabs(id="main-tabs", value="tab-timeseries", children=[
                 dcc.Tab(label="Time Series", value="tab-timeseries"),
@@ -201,7 +202,8 @@ def create_app():
         ].copy()
         
         # Call your existing map function with filtered data
-        fig = make_europe_map(save_html=False,
+        fig = make_europe_map(do_features,
+                              save_html=False,
                               do_buttons=False,        
                               custom_indicator=indicator,
                               custom_year=year)
