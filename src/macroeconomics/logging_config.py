@@ -29,8 +29,11 @@ def setup_logging():
     
     # File handler with rotation (optional, for local development)
     if os.getenv('ENVIRONMENT') != 'production':
+        # CRITICAL: Ensure LOG_DIR exists before creating file handler
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        
         file_handler = RotatingFileHandler(
-            LOG_DIR/ 'app.log', maxBytes=10485760, backupCount=5  # 10MB files, keep 5
+            LOG_DIR / 'app.log', maxBytes=10485760, backupCount=5  # 10MB files, keep 5
         )
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
