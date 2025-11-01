@@ -11,7 +11,7 @@ from macroeconomics.core.functions import get_shared_data_components
 from macroeconomics.logging_config import logger
 from macroeconomics.viz.maps.geo import get_geojson, DEFAULT_FEATUREIDKEY
 from macroeconomics.viz.maps.europe import clip_to_mainland_europe
-from macroeconomics.viz.theme import shared_title_style
+from macroeconomics.viz.theme import shared_title_style, wrap_title
 
 def load_tidy(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -23,16 +23,13 @@ def load_tidy(path: Path) -> pd.DataFrame:
     df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
     return df
 
-def wrap_title(name: str, unit: str | None = None, width: int = 25) -> str:
-    # naive wrap: break at the last space before width
-    label = name.strip()
-    if len(label) > width and " " in label:
-        i = label.rfind(" ", 0, width)
-        if i != -1:
-            label = label[:i] + "<br>" + label[i+1:]
-    if unit:
-        label += f"<br>({unit})"
-    return label
+
+
+def get_colorscale_limits(data_series, percentile=95):
+    """Use percentile to handle outliers elegantly"""
+    lower = data_series.quantile((100 - percentile) / 100)
+    upper = data_series.quantile(percentile / 100)
+    return lower, upper
 
 def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicator=None, custom_year=None):
     """
@@ -68,6 +65,8 @@ def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicat
     init_unit = units_dict[init_indicator]
     initial_idx = years.index(init_year)
     init_unit_suffix = unit_suffix_dict[init_indicator]
+    current_data = df.query("indicator == @init_indicator and year == @init_year")
+    zmin, zmax = get_colorscale_limits(current_data["value"], percentile=95)
 
     fig = px.choropleth(
         df.query("indicator == @init_indicator and year == @init_year"),
@@ -77,8 +76,8 @@ def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicat
         color="value",
         projection="mercator",
         color_continuous_scale="Viridis",
-        custom_data=["country_name", "value"],  # carry readable name
-
+        custom_data=["country_name", "value"], 
+        range_color= [zmin, zmax],
     )
     fig.update_geos(fitbounds="locations", visible=False)
     fig.update_traces(
@@ -89,7 +88,7 @@ def make_europe_map(do_features, save_html=True, do_buttons=True, custom_indicat
     fig.update_layout(
         margin=dict(l=20, r=100, t=80, b=20), 
         coloraxis_colorbar=dict(
-            title=init_unit,
+            title=wrap_title(init_unit),
             thickness=15,
             len=0.8,
             x=1.01,
