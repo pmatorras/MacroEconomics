@@ -63,7 +63,7 @@ def create_timeseries_layout(country_options, indicator_options, default_countri
             dcc.Graph(id="macro-graph", style={"height": "72vh"}),
         ],
     )
-def create_map_layout(indicator_options, default_indicators):
+def create_map_layout(indicator_options, default_indicators, years):
     """New map tab layout"""
     return html.Div([
         html.Div(
@@ -89,7 +89,7 @@ def create_map_layout(indicator_options, default_indicators):
                         html.Label("Map Year"),
                         dcc.Dropdown(
                             id="map-year",
-                            options=[{"label": str(y), "value": y} for y in range(2000, 2025)],
+                            options=[{"label": str(y), "value": y} for y in years],
                             value=2023,
                             clearable=False,
                         ),
@@ -156,7 +156,7 @@ def create_app(args=None):
                 default_indicators, YEAR_MIN, YEAR_MAX, marks
             )
         elif active_tab == "tab-map":
-            return create_map_layout(indicator_options, default_indicators)
+            return create_map_layout(indicator_options, default_indicators, years)
     #timeseries callback
     @app.callback(
         Output("macro-graph", "figure"),
